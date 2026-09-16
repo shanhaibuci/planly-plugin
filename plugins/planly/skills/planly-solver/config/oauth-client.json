@@ -1,0 +1,7 @@
+{
+  "client_id": "w2l1utjyy8hojfclwn5lh",
+  "callback_url": "http://127.0.0.1/callback",
+  "scopes": [
+    "gateway:mcp"
+  ]
+}

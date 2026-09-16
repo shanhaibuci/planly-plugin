@@ -1,0 +1,20 @@
+{
+  "name": "personal",
+  "interface": {
+    "displayName": "Planly Plugins"
+  },
+  "plugins": [
+    {
+      "name": "planly",
+      "source": {
+        "source": "local",
+        "path": "./plugins/planly"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

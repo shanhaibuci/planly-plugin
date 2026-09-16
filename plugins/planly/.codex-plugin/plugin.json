@@ -1,0 +1,37 @@
+{
+  "name": "planly",
+  "version": "1.2.1",
+  "description": "通过 Planly工作台分析规划场景、构建求解参数、提交任务并解释结果。",
+  "author": {
+    "name": "Planly",
+    "url": "https://github.com/shanhaibuci"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Planly 场景求解",
+    "shortDescription": "连接 Planly工作台完成规划场景求解",
+    "longDescription": "分析派单、路径规划、排程与资源规划需求，通过 Gateway 创建并跟踪求解任务。Codex 默认采用 OAuth，ChatGPT 沿用既有 App 连接；创建任务前必须获得用户确认。",
+    "developerName": "Planly",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "使用 Planly 场景求解分析我的规划需求，并在创建任务前向我确认。"
+    ],
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png",
+    "logoDark": "./assets/logo-dark.png"
+  },
+  "apps": "./.app.json",
+  "repository": "https://github.com/shanhaibuci/planly-plugin",
+  "keywords": [
+    "planly",
+    "planning",
+    "routing",
+    "scheduling",
+    "solver",
+    "mcp"
+  ]
+}
