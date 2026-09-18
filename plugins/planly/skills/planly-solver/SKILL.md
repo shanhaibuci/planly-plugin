@@ -2,7 +2,7 @@
 name: planly-solver
 description: Use Planly Gateway to configure solver access, turn routing, dispatch, scheduling, or resource-planning requirements into a validated solve request, submit and track the job, explain the result, and generate local data-integration tools. Use for Planly planning scenarios and existing solver jobs; do not use for implementing solver algorithms.
 metadata:
-  version: "1.2.2"
+  version: "1.3.0"
 ---
 
 # Planly Solver
@@ -14,7 +14,7 @@ metadata:
 ## 全局规则
 
 - 跟随用户语言；API 字段、错误码、枚举和 tool name 保持原值。
-- 使用 Skill 时自动检查并配置公网 Gateway MCP，默认采用 OAuth；用户只完成登录授权，不要求准备 PAT、编辑配置或运行配置命令。遵守宿主权限确认，不代替用户同意 OAuth。只有用户明确选择 PAT 兼容模式时才使用独立参考；OAuth 失败不得自动降级为 PAT，不读取或输出任何 Token、授权码、密码或凭证缓存。
+- 优先使用 Planly Plugin 自带的 MCP 连接和宿主 OAuth；只有明确的独立 Skill 安装才自动配置用户级 Gateway MCP。用户只完成登录授权，不要求准备 PAT、编辑配置或运行配置命令。遵守宿主权限确认，不代替用户同意 OAuth。只有用户明确选择独立接入的 PAT 兼容模式时才使用独立参考；OAuth 失败不得自动降级为 PAT，不读取或输出任何 Token、授权码、密码或凭证缓存。
 - 优先收集脱敏结构和小样本，不要求上传完整生产数据。
 - 不访问管理员接口、Registry、Git、Gateway 数据库、对象存储内部地址、引擎实例、最终引擎请求归档或完整结果文件。
 - 不保存或声称 Gateway 保存了 `request_payload` 原文。只在当前会话或用户明确指定的本地文件中维护草稿。
@@ -23,13 +23,13 @@ metadata:
 
 ## 使用时自动配置 Gateway MCP
 
-任一需要 Gateway 的路线先检查一次，已连接时直接继续原任务：
+任一需要 Gateway 的路线先检查一次，已连接时直接继续原任务。先按宿主安装信息区分 `plugin`、`standalone` 或 `unknown`，不依据工具缺失猜测安装方式：
 
 1. 读取 `config/system-endpoint.json`，其 `origin` 和 `mcp_path` 是唯一地址事实源；不得从 `.env`、会话输入或命令行 URL 覆盖。客户端选择按实际宿主，不根据用户业务数据猜测。
-2. 先发现并只读验证：`gateway.*` 是逻辑名称。Codex CLI/IDE 从 `ALL_TOOLS` 按 `mcp__gateway__` 发现延迟 tools，调用 `mcp__gateway__gateway_image_versions_list_available`；不得用 `startsWith("gateway.")` 判断 tools 不可见。ChatGPT 从当前 Plugin 绑定的 MCP 连接发现对应只读能力，不使用 Codex 前缀或本地配置脚本。成功后静默继续。
-3. Codex tools 确实不可见时读取 [Gateway 自动接入](references/gateway-access.md)，由 Agent 运行 `scripts/configure_codex_gateway_mcp.py status --project-root <project-root>`。先按脚本的 `codex_oauth_support` 确认宿主具备预注册 OAuth 能力；缺失配置或仅缺少公开 OAuth 字段时，简短告知并执行同一脚本的 `apply`，默认 OAuth，不要求 PAT 或用户执行终端命令。从 `config/oauth-client.json` 读取公开 Client ID、回调和 scope；只添加固定 HTTPS 端点的用户级缺失配置或补齐公开字段，保留原工具策略；已有配置、显式禁用或项目覆盖发生冲突时停止，取得用户定向修复决定，不静默覆盖。
-4. 新配置或宿主明确要求登录时由 Agent 发起原生 OAuth；有 CLI 时使用 `codex mcp login gateway --scopes gateway:mcp`，否则使用宿主认证入口。只让用户完成浏览器登录授权；不读取 `.env` 或 OAuth 凭证缓存，不让用户粘贴 Token。ChatGPT 使用 Plugin 绑定的 OAuth，不走本地 Codex 路线。
-5. 首次按 `mcp__gateway__` 查询仍不可见不等于认证失败。按接入参考检查认证状态、刷新或在原聊天重试一次；不得反复登录。配置/授权刚更新后使用可用重载能力；确需重启时 IDE 提示 **Restart extension**，CLI 续接原会话，不要求重新描述需求。
+2. 先发现并只读验证：`gateway.*` 是逻辑名称。从宿主目录（Codex 的 `ALL_TOOLS` 包括延迟 tools）发现 `gateway.image_versions.list_available` 对应的实际名称，并核对 Planly 插件归属与受信连接。不得硬编码插件运行时前缀，不得仅凭后缀或描述认定来源；不得用 `startsWith("gateway.")` 判断 tools 不可见。多个候选或来源不明时停止并澄清连接，不混用账号/端点。独立 Skill 的旧用户级连接可以使用 `mcp__gateway__`；插件模式不得因此排除其他合法命名空间。成功后静默继续。
+3. tools 确实不可见时读取 [Gateway 自动接入](references/gateway-access.md)。`plugin` 模式只检查插件安装、启用、宿主 OAuth 和工具加载，禁止执行用户级 `apply` 创建第二条连接；`unknown` 模式先确认安装来源。只有明确的 `standalone` 模式才由 Agent 运行 `scripts/configure_codex_gateway_mcp.py status --project-root <project-root>`。先按脚本的 `codex_oauth_support` 确认宿主具备预注册 OAuth 能力；缺失配置或仅缺少公开 OAuth 字段时，简短告知并执行同一脚本的 `apply`，默认 OAuth，不要求 PAT 或用户执行终端命令。从 `config/oauth-client.json` 读取公开 Client ID、回调和 scope；只添加固定 HTTPS 端点的用户级缺失配置或补齐公开字段，保留原工具策略；已有配置、显式禁用或项目覆盖发生冲突时停止，取得用户定向修复决定，不静默覆盖。
+4. 新配置或宿主明确要求登录时由 Agent 发起原生 OAuth；插件模式使用当前插件 MCP 的 Authenticate 入口，不能拿独立连接的登录命令代替。明确的独立 Skill 且有 CLI 时使用 `codex mcp login gateway --scopes gateway:mcp`，否则使用宿主认证入口。只让用户完成浏览器登录授权；不读取 `.env` 或 OAuth 凭证缓存，不让用户粘贴 Token。
+5. 首次按实际连接查询仍不可见不等于认证失败；独立 Skill 首次按 `mcp__gateway__` 查询仍不可见也适用。按接入参考检查认证状态、刷新或在原聊天重试一次；不得反复登录。配置/授权刚更新后使用可用重载能力；确需重启时 IDE 提示 **Restart extension**，CLI 续接原会话，不要求重新描述需求。
 6. 配置写入和 OAuth 登录成功都不代表工具已载入。必须重新发现并通过只读 tool 验证后才记录已连接；成功后静默继续原始意图，不输出接入报告，不得把“工具已就绪”描述为“已重连”。取消、超时、网络、scope、注册或配置冲突按真实原因停止，不重复写配置或自动降级。
 
 ## 先路由意图
@@ -76,11 +76,13 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 
 只有任务成功终态才读取结果摘要、摘要 Schema 和结果入口。读取 [结果解释](references/result-explanation.md)，默认按整体可行性、派单成功与未派数量、公开未派原因、总里程、总时间、非零吨公里费用、工程师派单顺序和详情入口展示。结合得分摘要判断和解释，但默认不展示原始 hard/soft score。把结论分为可确认事实、合理推断和证据不足；不得伪装成引擎真实决策链。
 
+用户查看任务、地图、Gantt 或工程师路线时，按 [MCP Apps 展示](references/mcp-apps-ui.md) 使用已授权只读 UI。成功结果概览可附会话内卡片；针对性问题先回答，不强制额外卡片。使用 Gateway 返回的 `display_tool_name`，不拼版本工具名；无 UI 时保留摘要和网页入口，不声称已显示。
+
 结果不可解或质量不满足用户目标时，只提出业务数据或合法参数调整建议。用户决定调整后返回场景分析或参数构建，生成新 revision，并重新经过积分提示和人工确认。
 
 ## Gateway tool 边界
 
-只使用以下用户级 tools：
+使用以下用户级业务 tools：
 
 - `gateway.image_versions.list_available`
 - `gateway.image_versions.get_detail`
@@ -93,6 +95,8 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 - `gateway.solver_jobs.get_detail`
 - `gateway.solver_jobs.get_summary`
 - `gateway.solver_jobs.get_result_access`
+
+额外允许当前可信 Gateway 目录中的只读 UI tools：`gateway.ui.show_choices`，以及 Gateway 按任务返回的 `display_tool_name` 所指向的版本化结果工具。必须与当前目录交叉核对，只给 schema 允许的 `job_id`、`view`、可选 `engineer_id`；不自行拼接 `gateway.ui.result_...`。选择卡只传意图，不等于创建授权，创建确认门不变。工具禁用、版本不匹配或权限失效时停止并按展示参考降级，不探测其他版本或账号。
 
 先用只读 tool 获取事实，再推荐、构建或解释。不要把历史经验当作当前用户的镜像、权限、Schema、积分或任务状态。生成到用户工程的日常脚本优先调用 Gateway REST API，不要求运行环境加载 Skill 或 MCP 客户端。
 

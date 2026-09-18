@@ -1,6 +1,6 @@
 # PAT 兼容接入（仅用户明确选择时）
 
-默认接入走 [OAuth 自动配置](gateway-access.md)。只有用户明确要求 PAT 兼容模式时才读取本文；OAuth 失败不得自动降级到 PAT。所有 status/verify/apply 调用都必须显式指定 `--auth pat`。
+默认接入走 [OAuth 自动配置](gateway-access.md)。本文仅用于明确的独立 Skill 且用户明确要求 PAT 兼容模式；插件模式不执行本文脚本，不因插件未加载而添加用户级连接。OAuth 失败不得自动降级到 PAT。所有 status/verify/apply 调用都必须显式指定 `--auth pat`。
 
 ## 当前接入契约
 
@@ -17,9 +17,9 @@ Skill 对接系统的地址只在 `../config/system-endpoint.json` 配置一次�
 | 用户中心 | `{origin}/static/index.html#/account` |
 | MCP 接入页 | `{origin}/static/index.html#/mcp` |
 
-Skill不从`.env`、命令行参数或会话输入读取或覆盖MCP URL。ChatGPT安装完整Plugin时，插件根目录`.app.json`把Skill绑定到已注册的 Gateway MCP 连接，ChatGPT通过Logto OAuth取得当前用户访问凭证，不使用本页的PAT配置流程。`agents/openai.yaml`不重复声明MCP dependency。
+Skill不从`.env`、命令行参数或会话输入读取或覆盖MCP URL。完整Planly Plugin通过插件根目录`.mcp.json`声明Gateway连接，使用宿主OAuth，不使用本页的PAT配置流程。`agents/openai.yaml`不重复声明MCP dependency。
 
-Codex CLI/IDE只安装或加载Skill、没有取得上述ChatGPT托管连接时，继续使用本页后续PAT兼容路线；二者不得混用，也不得要求ChatGPT用户创建PAT。
+只有确认Codex CLI/IDE只安装独立Skill且用户明确选择PAT时，才使用后续兼容路线；插件未加载或未授权不满足此条件，不得混用或要求插件用户创建PAT。
 
 ## 默认行为：正常时静默继续
 

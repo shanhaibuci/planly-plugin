@@ -67,3 +67,5 @@ Gateway 返回字段或业务错误时，保留 `code`、`message` 和 `details`
 - `failed`、`canceled`、`timed_out`、`archive_failed`：只解释公开安全错误和下一步，不推测内部堆栈。
 
 调用 `gateway.solver_jobs.get_result_access` 后只使用 `detail_page_url`。绝对 URL 原样返回；相对 URL 只与 `../config/system-endpoint.json` 中的 `origin` 合并。用户可见链接文案统一为“点击查看派单路线与排程详情”。不得构造下载或对象存储地址。
+
+在支持 MCP Apps 的宿主中，任务查询及结果查看按 [只读展示](mcp-apps-ui.md) 使用公共卡片和 Gateway 返回的实际展示工具；保留上述网页入口作为降级。展示失败不创建替代任务、不重跑求解、不绕过权限，也不等同于求解失败。

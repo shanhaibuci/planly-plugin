@@ -8,6 +8,9 @@
 
 ```yaml
 access:
+  installation_mode: unknown
+  trusted_connection: null
+  runtime_tool_names: {}
   tools_discovered: false
   tool_discovery_attempts: 0
   deferred_catalog_checked: false
@@ -18,6 +21,11 @@ access:
   oauth_login_status: unknown
   oauth_login_attempted: false
   connection_status: unverified
+ui:
+  host_support: unknown
+  display_tool_name: null
+  display_job_id: null
+  render_status: unverified
 intent: connect | create | integrate | query | explain
 phase: access | analyze | build | confirm | submit | monitor | explain
 scenario:
@@ -72,9 +80,10 @@ evidence:
 ## 状态不变量
 
 - `access.connection_status` 只能在 Gateway 只读 tool 成功返回后记为 `connected`；仅发现客户端配置不等于连接成功。
-- `gateway.*` 是逻辑名称；Codex 延迟目录的运行时名称以 `mcp__gateway__` 开头。每次工具发现尝试都必须按该前缀查询 `ALL_TOOLS`，不得用 `startsWith("gateway.")` 或首轮静态工具列表判断不可见。完成查询后才把 `deferred_catalog_checked` 设为 `true` 并增加 `tool_discovery_attempts`。
+- `installation_mode` 取 plugin/standalone/unknown，依据宿主安装信息而非工具缺失推断。plugin/unknown 不运行用户级配置脚本；可信连接失效或来源不明时停止，不静默切换账号/端点。
+- `gateway.*` 是逻辑名称；每次工具发现都查询 `ALL_TOOLS` 或实际宿主目录，核对连接归属后记录实际工具名。不得硬编码插件完整命名空间、仅凭后缀信任来源，或用 `startsWith("gateway.")` 判断不可见。仅独立 Skill 的既有连接可按 `mcp__gateway__` 查询。完成查询后才设置 `deferred_catalog_checked` 并增加 `tool_discovery_attempts`。
 - 默认 `auth_mode=oauth`；配置脚本的 `config_status=configured` 不证明登录成功，OAuth 登录成功也不证明本轮已有 tools。只在客户端明确返回授权成功后记录 `oauth_login_status=authorized`，只读 tool 成功后才记录连接成功。
-- 自动配置只添加缺失的固定端点用户级配置，或补齐同一端点的公开 Client ID、callback、resource 和 scope；写入前确认宿主支持预注册客户端；冲突、显式禁用、项目覆盖或解析失败时停止，不静默覆盖。默认不读取 `.env`、PAT 或 OAuth 凭证存储。
+- 独立 Skill 自动配置只添加缺失的固定端点用户级配置，或补齐同一端点的公开 Client ID、callback、resource 和 scope；写入前确认宿主支持预注册客户端；冲突、显式禁用、项目覆盖或解析失败时停止，不静默覆盖。默认不读取 `.env`、PAT 或 OAuth 凭证存储。
 - 新配置或宿主明确要求认证时发起一次 OAuth，并设置 `oauth_login_attempted=true`。取消、超时或失败后停止，只有用户新动作才重试；认证/网络/权限错误不能统一解释为工具冷启动。
 - 既有配置未改动且首次延迟发现为空时，优先检查宿主认证状态/刷新，必要时设置 `startup_retry_requested=true` 并只在原聊天重试一次；不能因此推断需要重复登录。
 - 用户重试后必须重新查询延迟目录，增加 `tool_discovery_attempts`；成功后清除 `startup_retry_requested` 并静默继续，不使用“已重连”。第二次仍不可见时提示宿主重载/Restart extension 或 CLI 续接，不循环重试。
@@ -94,6 +103,8 @@ evidence:
 - 只有未决必填问题已解决、关键映射已确认且明显非法值已清除时，才能进入确认阶段。
 - 只有 `confirmation.confirmed_revision == draft.revision` 时才能调用创建 tool。
 - `job.job_id` 只记录 Gateway 明确返回或近期任务查询能够确认的任务标识。
+- `ui.display_tool_name` 只来自该任务的 Gateway 展示提示，并与当前可信工具目录核对；换任务、换连接、错误版本、权限失效或目录刷新后重新发现，不复用旧映射。
+- `ui.host_support` 只有宿主明确完成 MCP Apps 协商才记 supported；没有图形宿主实际证据时 `render_status` 仍为 unverified。只读工具调用成功不证明 HTML 已渲染或地图已联网。无 UI 时按 [展示参考](mcp-apps-ui.md) 降级，不调用写工具修复展示。
 
 ## 失效与回退
 

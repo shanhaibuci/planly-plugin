@@ -2,15 +2,18 @@
 
 ## 固定目标与宿主边界
 
-先读取 `../config/system-endpoint.json`；MCP URL 只由 `origin + mcp_path` 派生，Server 名为 `gateway`，OAuth scope 为 `gateway:mcp`。公开 Client ID 和回调从 `../config/oauth-client.json` 读取，Token/Secret 不得进入该文件；OAuth resource 与上述 MCP URL 相同。自动配置要求 HTTPS，不接受调用方覆盖 URL，不从 `.env`、命令行 URL 或会话输入派生目标。
+先读取 `../config/system-endpoint.json`；MCP URL 只由 `origin + mcp_path` 派生，OAuth scope 为 `gateway:mcp`。插件内 Server 名为 `planly`；独立 Skill 的既有用户级 Server 名仍为 `gateway`，业务 tool 名仍为 `gateway.*`。公开 Client ID 和回调从 `../config/oauth-client.json` 读取，Token/Secret 不得进入该文件；OAuth resource 与上述 MCP URL 相同。自动配置要求 HTTPS，不接受调用方覆盖 URL，不从 `.env`、命令行 URL 或会话输入派生目标。
 
-- **Codex CLI/IDE**：Agent 使用下述内置脚本自动添加缺失的用户级 MCP 配置，再通过客户端原生 OAuth 登录。默认不读取 `.env`、PAT 或 OAuth 凭证缓存，不配置静态 Authorization。
-- **ChatGPT Plugin**：使用当前 Plugin 绑定的远程 MCP 连接和宿主 OAuth。缺少授权时引导连接当前 Plugin；不要运行本地 Codex 脚本，也不要假设宿主工具名以 `mcp__gateway__` 开头。
+- **Planly Plugin（含 Codex 插件安装）**：使用 `.mcp.json` 的连接与宿主 OAuth，无旧远端 App 依赖。缺少授权时使用该插件 MCP 的 Authenticate；不要运行本地 Codex 脚本添加用户级 MCP，不运行独立连接的 `codex mcp login gateway`，也不要假设工具名以 `mcp__gateway__` 开头。未安装/未启用/需重载时按真实状态处理，不能自动创建第二条连接或删除用户已有连接。
+- **独立 Skill + Codex CLI/IDE**：只有确认不是插件模式，才使用下述内置脚本自动添加缺失的用户级 MCP 配置，再通过客户端原生 OAuth 登录。默认不读取 `.env`、PAT 或 OAuth 凭证缓存，不配置静态 Authorization。
+- **安装来源未知**：先查询宿主插件/连接信息；仍无法判断时向用户澄清，禁止执行 `apply`。不要通过是否缺少 tools 推断为独立 Skill。
 - **其他客户端**：只有确认当前宿主提供 MCP 注册和 OAuth 入口后才使用其原生方式。没有可用配置能力时准确说明限制，不虚构“已配置”、不要求 PAT 作为替代。
 
 ## 1. 先发现延迟 tools
 
-`gateway.*` 是逻辑名称。Codex 中先检查实际延迟目录，不能用首轮静态列表判断缺失：
+`gateway.*` 是逻辑名称。先从宿主实际目录（Codex 的 `ALL_TOOLS`）查找当前 Planly 插件/Gateway 连接的只读 `gateway.image_versions.list_available`。采用目录返回的实际工具名，不硬编码插件完整前缀，不自行构造可调用名称。后缀/描述只能帮助找候选，不能证明来源；核对宿主提供的插件归属、连接端点与业务逻辑名后才可调用。同功能连接多于一个时，优先当前插件连接；无法确认归属时停止并澄清，不把任务/生产数据发给不明服务。
+
+下面仅是**已确认的独立 Skill 用户级连接**示例，不用于筛掉插件命名空间：
 
 ```javascript
 const gatewayTools = ALL_TOOLS.filter(
@@ -23,9 +26,13 @@ if (gatewayTools.some(
 }
 ```
 
-只读调用成功就静默继续原任务，不再次配置或登录。认证 challenge 才进入 OAuth；网络、权限或服务端错误应按实际原因处理，不能一律重写配置。ChatGPT 从 Plugin 绑定连接的实际目录发现相应只读能力。
+只读调用成功就静默继续原任务，不再次配置或登录。认证 challenge 才进入 OAuth；网络、权限或服务端错误应按实际原因处理，不能一律重写配置。Plugin 模式从插件连接的实际目录发现相应只读能力。用户发送“重试”后必须重新执行上述发现，不能沿用先前空目录，也不能静默切到另一账号/连接。
 
-## 2. tools 确实不可见：自动配置
+## 2. tools 确实不可见：先按安装模式分流
+
+**插件模式到此不进入下列脚本流程。** 检查插件启用状态、OAuth 是否需登录、实际 MCP 是否已加载和宿主是否支持插件 HTTP/OAuth。仅根据宿主给出的提示刷新/重载；能力不支持时报告限制，不以用户级连接、PAT 或旧 App 绕过。直接声明 MCP 的 GitHub 插件当前为 Desktop only，不能声称已接入 ChatGPT 网页端。MCP Apps UI 是否能显示另按 [展示参考](mcp-apps-ui.md) 验证。
+
+以下仅用于**明确的独立 Skill**自动配置：
 
 下面命令由 Agent 执行，不交给用户执行。`<skill-dir>` 为当前 Skill 的真实路径，`<project-root>` 为当前用户工程根目录。
 
@@ -49,7 +56,9 @@ python3 <skill-dir>/scripts/configure_codex_gateway_mcp.py apply --project-root 
 
 ## 3. 自动发起 OAuth，用户只完成登录授权
 
-对于刚添加的配置或宿主明确报告需要认证的连接，优先使用当前宿主原生认证入口。有 Codex CLI 时，由 Agent 执行：
+插件模式只使用实际插件连接的宿主认证入口；确认该宿主支持预注册 `clientId`、`callbackUrl` 与发现流程，不以配置被接受证明这些字段生效。回调不匹配、scope/resource 缺失或版本不兼容时停止，不能放宽注册/认证策略。
+
+对于独立 Skill 刚添加的配置或宿主明确报告需要认证的用户级连接，优先使用原生认证入口。有 Codex CLI 时，由 Agent 执行：
 
 ```bash
 codex mcp login gateway --scopes gateway:mcp

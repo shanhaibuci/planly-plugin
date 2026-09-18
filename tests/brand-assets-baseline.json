@@ -1,0 +1,29 @@
+{
+  "composerIcon": {
+    "path": "./assets/icon.png",
+    "source": "docs/brand-assets/planly/screen/logo-256.png",
+    "size": [
+      256,
+      256
+    ],
+    "sha256": "ea4b74358d342793f36fcf0843c94de94368513525ed8b0759d305e51e9fd4f6"
+  },
+  "logo": {
+    "path": "./assets/logo.png",
+    "source": "docs/brand-assets/planly/png/logo-horizontal-4096.png",
+    "size": [
+      4096,
+      1218
+    ],
+    "sha256": "c35886cef42261a16617315a4f51f4afe9f88a655d2e2d68938cc0d2ed6844cc"
+  },
+  "logoDark": {
+    "path": "./assets/logo-dark.png",
+    "source": "docs/brand-assets/planly/png/logo-horizontal-white-2048.png",
+    "size": [
+      2048,
+      609
+    ],
+    "sha256": "f3b160246217833129b0d5c1f2a4b86540ada897ba0adaaf100c28ac8f679954"
+  }
+}

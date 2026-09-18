@@ -1,6 +1,6 @@
 {
   "name": "planly",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "通过 Planly工作台分析规划场景、构建求解参数、提交任务并解释结果。",
   "author": {
     "name": "Planly",
@@ -10,7 +10,7 @@
   "interface": {
     "displayName": "Planly 场景求解",
     "shortDescription": "连接 Planly工作台完成规划场景求解",
-    "longDescription": "分析派单、路径规划、排程与资源规划需求，通过 Gateway 创建并跟踪求解任务。Codex 默认采用 OAuth，ChatGPT 沿用既有 App 连接；创建任务前必须获得用户确认。",
+    "longDescription": "分析派单、路径规划、排程与资源规划需求，通过插件自带的 Gateway MCP 和宿主 OAuth 创建、跟踪任务。在支持 MCP Apps 的宿主中请求只读地图、Gantt 与规划回放；创建任务前必须获得用户确认。直接 MCP 接入面向桌面端/Codex，真实 UI 能力以客户端验收为准。",
     "developerName": "Planly",
     "category": "Productivity",
     "capabilities": [
@@ -24,7 +24,7 @@
     "logo": "./assets/logo.png",
     "logoDark": "./assets/logo-dark.png"
   },
-  "apps": "./.app.json",
+  "mcpServers": "./.mcp.json",
   "repository": "https://github.com/shanhaibuci/planly-plugin",
   "keywords": [
     "planly",
