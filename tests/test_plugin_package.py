@@ -29,9 +29,43 @@ class PluginPackageTest(unittest.TestCase):
         self.assertEqual("./.app.json", manifest["apps"])
         self.assertNotIn("mcpServers", manifest)
 
+    def test_installation_instructions_use_current_release(self):
+        version = (ROOT / "VERSION").read_text().strip()
+        readme = (ROOT / "README.md").read_text()
+        self.assertIn(f"| Plugin / Skill 版本 | **{version}** |", readme)
+        self.assertEqual([f"v{version}"], re.findall(r"--ref (\S+)", readme))
+        self.assertIn(f"## {version} 变更", readme)
+
+    def test_app_alias_is_planly_and_registered_identity_is_unchanged(self):
+        app = json.loads((PLUGIN / ".app.json").read_text())
+        self.assertEqual({
+            "apps": {
+                "planly": {
+                    "id": "asdk_app_6a9a8567d2dc819190f6338b44a06c29",
+                    "category": "Productivity",
+                },
+            },
+        }, app)
+
+    def test_published_names_and_text_do_not_reintroduce_legacy_brand(self):
+        paths = [ROOT / "README.md", ROOT / ".agents/plugins/marketplace.json"]
+        paths.extend(PLUGIN.rglob("*"))
+        for path in paths:
+            if "__pycache__" in path.parts:
+                continue
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                self.assertNotIn("dfst", str(path.relative_to(ROOT)).lower())
+                if path.is_file():
+                    try:
+                        content = path.read_text(encoding="utf-8")
+                    except UnicodeDecodeError:
+                        continue  # Binary brand assets have separate format checks.
+                    self.assertNotIn("dfst", content.lower())
+
     def test_marketplace_resolves_real_plugin_and_explicit_policies(self):
         market = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())
         self.assertRegex(market["name"], r"^[A-Za-z0-9_-]+$")
+        self.assertEqual("Planly Plugins", market["interface"]["displayName"])
         self.assertEqual(1, len(market["plugins"]))
         entry = market["plugins"][0]
         self.assertEqual("planly", entry["name"])
@@ -60,8 +94,9 @@ class PluginPackageTest(unittest.TestCase):
                     self.assertTrue(path.is_relative_to(PLUGIN.resolve()))
                     self.assertTrue(path.exists(), target)
 
-    def test_authentication_binding_matches_pre_rebrand_release(self):
-        # Fingerprints protect unchanged public routing/registration data, not secrets.
+    def test_public_connections_match_approved_baseline(self):
+        # Public routing/OAuth bytes stay fixed; the App alias changes in v1.2.2.
+        # Registered App identity is also asserted separately, not only by hash.
         baseline = json.loads((ROOT / "tests/public-config-baseline.json").read_text())
         for relative, expected in baseline.items():
             with self.subTest(path=relative):

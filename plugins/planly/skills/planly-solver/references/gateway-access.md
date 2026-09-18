@@ -59,7 +59,7 @@ codex mcp login gateway --scopes gateway:mcp
 
 IDE 无 CLI 时，使用宿主的 Authenticate 入口；如果当前 Agent 无法触发该入口，只让用户点击 Authenticate，不要求安装 CLI 或编辑配置。远程开发环境的浏览器回调不可达时，准确报告回调问题，不能假设公网服务就意味着 localhost 回调可达。
 
-OAuth 服务端前置条件：Gateway `/mcp/meta` 的 `oauth_enabled=true` 仍不足以证明客户端可接入。当前 Skill 随包携带维护者创建的既有 Agent MCP 公开客户端配置（服务端显示名仍为 `DFST Agent MCP`，本次品牌发布不修改该注册），直接使用预注册路线，不要求用户创建应用。Logto 必须支持当前客户端可用的注册/识别方式；在其他部署中未公布 DCR/CIMD 且没有对应预注册客户端配置时，报告需要平台维护者配置 OAuth 客户端，不让终端用户改填 PAT。预注册 Client ID 是公开标识，Client Secret 不得放进 Skill 或聊天。
+OAuth 服务端前置条件：Gateway `/mcp/meta` 的 `oauth_enabled=true` 仍不足以证明客户端可接入。当前 Planly Skill 随包携带维护者创建的既有 Agent MCP 公开客户端配置（OAuth 服务端展示名称由管理员单独维护，插件改名不修改注册身份），直接使用预注册路线，不要求用户创建应用。Logto 必须支持当前客户端可用的注册/识别方式；在其他部署中未公布 DCR/CIMD 且没有对应预注册客户端配置时，报告需要平台维护者配置 OAuth 客户端，不让终端用户改填 PAT。预注册 Client ID 是公开标识，Client Secret 不得放进 Skill 或聊天。
 
 取消/超时后停止当前登录；没有用户新动作不得反复启动登录。Discovery、客户端识别/注册或回调不兼容、网络错误、scope 不足分别说明，不降级为 PAT，不放宽 Gateway 的安全配置。OAuth 登录成功只记录授权完成，仍需后续只读 tool 验证。
 

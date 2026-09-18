@@ -7,12 +7,12 @@ Planly 的场景求解插件，通过 Planly工作台（Gateway）分析派单�
 | Plugin 标识 | `planly` |
 | Skill 标识 | `planly-solver` |
 | 展示名称 | Planly 场景求解 |
-| Plugin / Skill 版本 | **1.2.1** |
+| Plugin / Skill 版本 | **1.2.2** |
 
 ## 安装与使用
 
 ```bash
-codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.2.1
+codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.2.2
 ```
 
 私有仓库需要本机 Git 已获得对应 GitHub 仓库的读取权限。然后在支持 Plugins Directory 的客户端中找到 **Planly 场景求解**并安装，开启新会话后使用：
@@ -21,16 +21,24 @@ codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.2.1
 $planly-solver 帮我分析配送与工程师派单场景
 ```
 
-旧版 `dfst-planning-solver` 不会被自动卸载或覆盖；迁移后请在宿主中停用旧版，避免同时启用两份同功能 Skill。已有 Gateway MCP 配置与 OAuth 授权不因更名自动重置。
+历史版本的同功能插件不会被自动卸载或覆盖；迁移后请在宿主中停用旧版，避免同时启用两份同功能 Skill。已有 Gateway MCP 配置与 OAuth 授权不因更名自动重置。
+
+如果 marketplace 已固定旧版本 tag，请先将 Git ref 切换到 `v1.2.2`，再更新或重新安装 Planly 插件，并开启新会话验证。刷新固定旧 tag 的 marketplace 不会自动切换到新版本。
 
 ## 接入与安全边界
 
 - Codex 在使用 Skill 时先检查只读工具；确实缺少配置时由 Agent 检查宿主能力并添加缺失配置，按需发起原生 OAuth。用户自行完成登录和授权，不在聊天中发送密码或 Token。
 - 系统地址仍以 Skill 的 `config/system-endpoint.json` 为唯一事实源。现有域名、MCP Server 名 `gateway`、tool 名、公开 OAuth Client ID、回调和 scope 均未更改。
-- ChatGPT 沿用 `.app.json` 中已有 App ID 和连接键；其服务端仍可能显示旧名称。仓库更名不等于已重新发布 App、通过商店审核或适配所有宿主。
+- `.app.json` 的包内 App 连接别名统一为 `planly`，ChatGPT 仍使用原 App ID。别名不控制远端 App 的展示名称；授权弹窗与 OAuth 服务端的名称需要对应管理员单独更新，可能仍显示旧名称。插件发布不等于已修改远端名称、重新发布 App、通过商店审核或适配所有宿主。
 - 不新增直接 MCP 配置来绕过现有 OAuth 注册流程；PAT 仅在用户明确选择兼容模式时使用，OAuth 失败不自动降级。
 - 所有任务经 Gateway 创建，创建前必须取得用户确认。插件不包含求解引擎、Gateway 服务端、管理员接口或生产数据。
 - 自动化测试不代替真实账号登录、授权及只读 MCP 调用的端到端验收；本次品牌发布没有完成该项验收。
+
+## 1.2.2 变更
+
+- 统一 App 连接别名、安装说明和 Skill 接入文案中的 Planly 命名，清除包内旧品牌名。
+- 保留原 App ID、OAuth 客户端配置、Gateway 地址与 MCP 工具协议，不重建连接身份。
+- 增加旧品牌残留、App 身份保持及安装版本一致性回归测试；同步 Plugin 和 Skill 版本。
 
 ## 1.2.1 变更
 

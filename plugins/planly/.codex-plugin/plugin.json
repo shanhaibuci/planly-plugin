@@ -1,6 +1,6 @@
 {
   "name": "planly",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "通过 Planly工作台分析规划场景、构建求解参数、提交任务并解释结果。",
   "author": {
     "name": "Planly",
