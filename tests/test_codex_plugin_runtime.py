@@ -40,7 +40,7 @@ class CodexPluginRuntimeTest(unittest.TestCase):
         self.home.mkdir()
         self.codex_home.mkdir()
         self.auth_required = False
-        self.authorization_scopes = ["gateway:mcp"]
+        self.authorization_scopes = ["gateway:mcp", "offline_access"]
         self.requests = []
         fixture = self
 
@@ -67,7 +67,7 @@ class CodexPluginRuntimeTest(unittest.TestCase):
                 if self.path.startswith("/.well-known/oauth-protected-resource"):
                     self.reply(200, {
                         "resource": fixture.base + "/mcp", "authorization_servers": [fixture.base],
-                        "scopes_supported": ["gateway:mcp"],
+                        "scopes_supported": ["gateway:mcp", "offline_access"],
                     })
                 elif self.path in ("/.well-known/oauth-authorization-server", "/.well-known/openid-configuration"):
                     metadata = {
@@ -214,7 +214,7 @@ class CodexPluginRuntimeTest(unittest.TestCase):
         self.assertEqual([public["client_id"]], query["client_id"])
         self.assertEqual(["code"], query["response_type"])
         self.assertEqual(["S256"], query["code_challenge_method"])
-        self.assertEqual(public["scopes"], query["scope"])
+        self.assertEqual([" ".join(public["scopes"])], query["scope"])
         self.assertEqual([self.base + "/mcp"], query["resource"])
         callback = urlsplit(query["redirect_uri"][0])
         self.assertEqual("127.0.0.1", callback.hostname)
@@ -230,7 +230,8 @@ class CodexPluginRuntimeTest(unittest.TestCase):
 
     def test_native_plugin_scopes_override_broad_logto_discovery(self):
         # Regression: the real issuer advertises identity/organization scopes,
-        # while protected-resource metadata requires gateway:mcp. The login RPC
+        # while protected-resource metadata requires gateway:mcp. The plugin
+        # also explicitly requests offline_access for host-managed refresh. The login RPC
         # MUST omit its scopes override, so the plugin declaration is exercised.
         self.authorization_scopes = json.loads(
             (ROOT / "tests/fixtures/logto-discovery-scopes.json").read_text()

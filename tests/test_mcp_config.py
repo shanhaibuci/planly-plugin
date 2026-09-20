@@ -47,7 +47,7 @@ class McpConfigTest(unittest.TestCase):
             "scopes": client["scopes"],
             "oauth": {"clientId": client["client_id"], "callbackUrl": client["callback_url"]},
         }}}, value)
-        self.assertEqual(["gateway:mcp"], client["scopes"])
+        self.assertEqual(["gateway:mcp", "offline_access"], client["scopes"])
 
     def test_generation_uses_changed_public_sources_not_hardcoded_endpoint(self):
         self.update("system-endpoint.json", origin="https://gateway.example.test")
@@ -80,6 +80,8 @@ class McpConfigTest(unittest.TestCase):
             {"callback_url": "https://arbitrary.example.test/callback"},
             {"scopes": ["gateway:mcp", "admin"]},
             {"scopes": ["gateway:mcp", "profile"]},
+            {"scopes": ["gateway:mcp"]},
+            {"scopes": ["offline_access", "gateway:mcp"]},
             {"scopes": ["openid", "profile"]},
             {"scopes": []},
             {"scopes": "gateway:mcp"},

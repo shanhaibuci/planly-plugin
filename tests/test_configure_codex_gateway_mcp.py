@@ -39,7 +39,7 @@ class ConfigureCodexGatewayMcpTest(unittest.TestCase):
         self.oauth_client = {
             "client_id": "public-test-client",
             "callback_url": "http://127.0.0.1/callback",
-            "scopes": ["gateway:mcp"],
+            "scopes": ["gateway:mcp", "offline_access"],
         }
 
     def tearDown(self) -> None:
@@ -351,7 +351,7 @@ class ConfigureCodexGatewayMcpTest(unittest.TestCase):
         self.assertEqual({"mcp_servers": {"gateway": {
             "url": MODULE.system_mcp_url(MODULE.load_system_endpoint()),
             "oauth_resource": MODULE.system_mcp_url(MODULE.load_system_endpoint()),
-            "scopes": ["gateway:mcp"],
+            "scopes": ["gateway:mcp", "offline_access"],
             "oauth": {k: self.oauth_client[k] for k in ("client_id", "callback_url")},
         }}}, tomllib.loads(path.read_text()))
         self.assertEqual(0o600, stat.S_IMODE(path.stat().st_mode))
@@ -377,7 +377,7 @@ class ConfigureCodexGatewayMcpTest(unittest.TestCase):
         path = self.codex_home / "config.toml"
         url = MODULE.system_mcp_url(MODULE.load_system_endpoint())
         original = (f'[mcp_servers.gateway]\nurl = "{url}"\n'
-                    f'oauth_resource = "{url}"\nscopes = ["gateway:mcp"]\n'
+                    f'oauth_resource = "{url}"\nscopes = ["gateway:mcp", "offline_access"]\n'
                     'tool_timeout_sec = 90\ndisabled_tools = ["write"]\n'
                     '[mcp_servers.gateway.oauth]\nclient_id = "public-test-client"\n'
                     'callback_url = "http://127.0.0.1/callback"\n'

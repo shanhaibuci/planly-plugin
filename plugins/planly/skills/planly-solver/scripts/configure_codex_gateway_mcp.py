@@ -4,7 +4,8 @@
 
 OAuth status/apply only inspect configuration and add a missing trusted HTTPS
 server. They never read .env or OAuth credential storage. Login is delegated to
-the host's OAuth UI or `codex mcp login gateway --scopes gateway:mcp`.
+the host's OAuth UI or
+`codex mcp login gateway --scopes gateway:mcp,offline_access`.
 
 Only with explicit --auth pat, the PAT is read from <project-root>/.env and
 the apply action writes a
@@ -131,8 +132,10 @@ def load_oauth_client(path: Path = OAUTH_CLIENT_PATH) -> dict[str, Any]:
             or not isinstance(value.get("client_id"), str)
             or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", value["client_id"])
             or value.get("callback_url") != "http://127.0.0.1/callback"
-            or value.get("scopes") != ["gateway:mcp"]):
-        raise ConfigurationError("OAuth 配置只能包含公开 Client ID、受支持回调与最小 MCP scope")
+            or value.get("scopes") != ["gateway:mcp", "offline_access"]):
+        raise ConfigurationError(
+            "OAuth 配置只能包含公开 Client ID、受支持回调、MCP 权限与离线续期 scope"
+        )
     return value
 
 

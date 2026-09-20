@@ -166,7 +166,7 @@ class PluginPackageTest(unittest.TestCase):
         self.assertEqual("https", urlparse(endpoint["origin"]).scheme)
         oauth = json.loads((SKILL / "config/oauth-client.json").read_text())
         self.assertEqual({"client_id", "callback_url", "scopes"}, set(oauth))
-        self.assertEqual(["gateway:mcp"], oauth["scopes"])
+        self.assertEqual(["gateway:mcp", "offline_access"], oauth["scopes"])
 
     def test_release_excludes_environment_credentials_and_internal_resources(self):
         for path in PLUGIN.rglob("*"):

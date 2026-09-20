@@ -1,13 +1,13 @@
 # Planly 独立 MCP 与 MCP Apps 验收
 
-版本：1.3.1。发布包内实现与真实宿主体验分开验收，未验证不算通过。
+版本：1.3.2。发布包内实现与真实宿主体验分开验收，未验证不算通过。
 
 ## 自动化范围
 
 - Manifest 不再引用 App，恰好声明 Planly HTTP MCP；Logo 与 Skill 完整。
 - 品牌采用已确认的线条骑士 A 版与 Outfit Bold 700 字标；小图标和两种 Logo 按基线校验 SHA-256、尺寸及 RGBA 通道，随包交付 Outfit 许可。
 - `.mcp.json` 与公开源一致且可重复生成；端点和 OAuth 源文件指纹未变。
-- 服务器级 `mcpServers.planly.scopes` 必须与公开源一致；字段缺失、误放在 `oauth.scopes` 或增加资料权限均不能通过生成检查。原生测试必须覆盖授权服务器发现列表大于业务权限列表的情况。
+- 服务器级 `mcpServers.planly.scopes` 必须与公开源一致，严格为 `gateway:mcp`、`offline_access`；字段缺失、顺序变化、误放在 `oauth.scopes` 或增加资料权限均不能通过生成检查。原生测试必须覆盖授权服务器发现列表大于显式权限列表的情况。
 - 不允许静态凭据、秘密字段、任意端点、非 HTTPS 地址或不支持的回调配置。
 - Skill 区分插件与独立安装，不硬编码插件命名空间、不静默切换连接、不自动创建第二条用户级 MCP。
 - UI 使用实际展示提示和当前工具目录，选择不创建任务，不拼工具/资源名；无 UI、错误版本、权限变化时安全降级。
@@ -47,14 +47,26 @@ PLANLY_CODEX_BIN=/path/to/codex python3 -m unittest discover -s tests -p 'test_c
 | 前置检查停止点 | 未登录、未替用户同意、未换 Token；不是完整 OAuth 或 GPT Desktop 验收 |
 | 发布与桌面更新 | 修复纳入 v1.3.1；未替用户更新桌面插件，v1.3.0 及更早 tag 不包含修复 |
 
+## v1.3.2 自动续期修复（2026-09-20）
+
+真实 GPT Desktop 使用 v1.3.1 重新登录后，Logto 交互日志显示 `ExchangeTokenBy.AuthorizationCode` 成功，但请求 scope 只有 `gateway:mcp`，`tokenTypes=["AccessToken"]`，没有 RefreshToken grant。实际使用的是公开 **DFST Agent MCP** 客户端；其服务端已启用 refresh token 签发与轮换，因此根因是插件未请求 `offline_access`，不是安装详情页缺少可编辑开关。
+
+v1.3.2 将公开配置和生成的 `.mcp.json` 精确更新为 `gateway:mcp offline_access`，并保持其他身份、资料、组织与管理 scope 被拒绝。包内自动化验证完成后仍不能声称真实续期通过；必须发布并更新 GPT Desktop 插件、重新授权，再按下表检查 Logto。
+
+| 验证 | 结果与边界 |
+| --- | --- |
+| 包内自动化 | 56 项通过（常规运行中 4 项原生测试按设计跳过）；生成配置一致性与 `git diff --check` 通过 |
+| Codex 0.155.0 原生隔离回归 | 4 项通过；授权 URL 的 scope 精确为 `gateway:mcp offline_access`，同时覆盖最小发现、Logto 式宽发现、缺失 scope 发现和 MCP UI 资源读取 |
+| 真实 GPT Desktop | 尚未安装 v1.3.2；AuthorizationCode 换码返回 RefreshToken、到期 RefreshToken grant 与轮换仍待验证 |
+
 ## 真实目标客户端验收（全部待验证）
 
 | 项目 | 操作及通过条件 | 当前状态 |
 | --- | --- | --- |
 | 安装与品牌 | 从本版本安装，显示 Planly 名称和图标；无历史远端 App 依赖 | 未验证 |
 | 独立连接 | 插件提供一条 Planly MCP；无重复用户级连接或错误账号切换 | 未验证 |
-| OAuth 授权请求 | 使用既有公开 client_id、S256、登记回调、正确 resource 与恰好 gateway:mcp scope；不误走 DCR、不照搬 OIDC 宽列表 | 旧插件链路已发现 invalid_scope；v1.3.1 修复待 GPT Desktop 更新后重测 |
-| OAuth 完整流程 | 用户登录/同意、换 Token、只读工具调用、刷新与撤销均正常；无凭据泄漏 | 未验证 |
+| OAuth 授权请求 | 使用既有公开 client_id、S256、登记回调、正确 resource 与恰好 `gateway:mcp offline_access`；不误走 DCR、不照搬 OIDC 宽列表 | v1.3.1 实测只有 `gateway:mcp`；v1.3.2 待发布、更新后重测 |
+| OAuth 完整流程 | AuthorizationCode 换码返回 AccessToken 与 RefreshToken；access token 到期后出现 RefreshToken grant 并完成轮换；只读工具调用与撤销正常，无凭据泄漏 | 未验证 |
 | UI 能力协商 | 宿主 initialize 声明正确的 UI 扩展/MIME，Gateway 返回协商能力 | 未验证 |
 | 公共 UI | 真实镜像、积分或任务卡能从 resources/read 获取 HTML 并完成桥接渲染 | 未验证 |
 | 版本化结果 | 真实成功任务与生效 ImageVersion 匹配；显示实际地图/Gantt/单工程师列表 | 未验证 |

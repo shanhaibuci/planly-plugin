@@ -4,7 +4,8 @@
       "type": "http",
       "url": "https://app.qingtingsk.com/mcp",
       "scopes": [
-        "gateway:mcp"
+        "gateway:mcp",
+        "offline_access"
       ],
       "oauth": {
         "clientId": "w2l1utjyy8hojfclwn5lh",

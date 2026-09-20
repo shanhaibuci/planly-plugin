@@ -2,7 +2,7 @@
 name: planly-solver
 description: Use Planly Gateway to configure solver access, turn routing, dispatch, scheduling, or resource-planning requirements into a validated solve request, submit and track the job, explain the result, and generate local data-integration tools. Use for Planly planning scenarios and existing solver jobs; do not use for implementing solver algorithms.
 metadata:
-  version: "1.3.1"
+  version: "1.3.2"
 ---
 
 # Planly Solver
@@ -28,7 +28,7 @@ metadata:
 1. 读取 `config/system-endpoint.json`，其 `origin` 和 `mcp_path` 是唯一地址事实源；不得从 `.env`、会话输入或命令行 URL 覆盖。客户端选择按实际宿主，不根据用户业务数据猜测。
 2. 先发现并只读验证：`gateway.*` 是逻辑名称。从宿主目录（Codex 的 `ALL_TOOLS` 包括延迟 tools）发现 `gateway.image_versions.list_available` 对应的实际名称，并核对 Planly 插件归属与受信连接。不得硬编码插件运行时前缀，不得仅凭后缀或描述认定来源；不得用 `startsWith("gateway.")` 判断 tools 不可见。多个候选或来源不明时停止并澄清连接，不混用账号/端点。独立 Skill 的旧用户级连接可以使用 `mcp__gateway__`；插件模式不得因此排除其他合法命名空间。成功后静默继续。
 3. tools 确实不可见时读取 [Gateway 自动接入](references/gateway-access.md)。`plugin` 模式只检查插件安装、启用、宿主 OAuth 和工具加载，禁止执行用户级 `apply` 创建第二条连接；`unknown` 模式先确认安装来源。只有明确的 `standalone` 模式才由 Agent 运行 `scripts/configure_codex_gateway_mcp.py status --project-root <project-root>`。先按脚本的 `codex_oauth_support` 确认宿主具备预注册 OAuth 能力；缺失配置或仅缺少公开 OAuth 字段时，简短告知并执行同一脚本的 `apply`，默认 OAuth，不要求 PAT 或用户执行终端命令。从 `config/oauth-client.json` 读取公开 Client ID、回调和 scope；只添加固定 HTTPS 端点的用户级缺失配置或补齐公开字段，保留原工具策略；已有配置、显式禁用或项目覆盖发生冲突时停止，取得用户定向修复决定，不静默覆盖。
-4. 新配置或宿主明确要求登录时由 Agent 发起原生 OAuth；插件模式使用当前插件 MCP 的 Authenticate 入口，不能拿独立连接的登录命令代替。明确的独立 Skill 且有 CLI 时使用 `codex mcp login gateway --scopes gateway:mcp`，否则使用宿主认证入口。只让用户完成浏览器登录授权；不读取 `.env` 或 OAuth 凭证缓存，不让用户粘贴 Token。
+4. 新配置或宿主明确要求登录时由 Agent 发起原生 OAuth；插件模式使用当前插件 MCP 的 Authenticate 入口，不能拿独立连接的登录命令代替。明确的独立 Skill 且有 CLI 时使用 `codex mcp login gateway --scopes gateway:mcp,offline_access`，否则使用宿主认证入口。只让用户完成浏览器登录授权；不读取 `.env` 或 OAuth 凭证缓存，不让用户粘贴 Token。
 5. 首次按实际连接查询仍不可见不等于认证失败；独立 Skill 首次按 `mcp__gateway__` 查询仍不可见也适用。按接入参考检查认证状态、刷新或在原聊天重试一次；不得反复登录。配置/授权刚更新后使用可用重载能力；确需重启时 IDE 提示 **Restart extension**，CLI 续接原会话，不要求重新描述需求。
 6. 配置写入和 OAuth 登录成功都不代表工具已载入。必须重新发现并通过只读 tool 验证后才记录已连接；成功后静默继续原始意图，不输出接入报告，不得把“工具已就绪”描述为“已重连”。取消、超时、网络、scope、注册或配置冲突按真实原因停止，不重复写配置或自动降级。
 

@@ -2,7 +2,7 @@
 
 ## 固定目标与宿主边界
 
-先读取 `../config/system-endpoint.json`；MCP URL 只由 `origin + mcp_path` 派生，OAuth scope 为 `gateway:mcp`。插件内 Server 名为 `planly`；独立 Skill 的既有用户级 Server 名仍为 `gateway`，业务 tool 名仍为 `gateway.*`。公开 Client ID 和回调从 `../config/oauth-client.json` 读取，Token/Secret 不得进入该文件；OAuth resource 与上述 MCP URL 相同。自动配置要求 HTTPS，不接受调用方覆盖 URL，不从 `.env`、命令行 URL 或会话输入派生目标。
+先读取 `../config/system-endpoint.json`；MCP URL 只由 `origin + mcp_path` 派生，OAuth scopes 固定为 `gateway:mcp` 与 `offline_access`。其中前者是 Gateway 业务权限，后者只请求宿主管理的 OAuth 离线续期，不扩大 Gateway 数据权限。插件内 Server 名为 `planly`；独立 Skill 的既有用户级 Server 名仍为 `gateway`，业务 tool 名仍为 `gateway.*`。公开 Client ID 和回调从 `../config/oauth-client.json` 读取，Token/Secret 不得进入该文件；OAuth resource 与上述 MCP URL 相同。自动配置要求 HTTPS，不接受调用方覆盖 URL，不从 `.env`、命令行 URL 或会话输入派生目标。
 
 - **Planly Plugin（含 Codex 插件安装）**：使用 `.mcp.json` 的连接与宿主 OAuth，无旧远端 App 依赖。缺少授权时使用该插件 MCP 的 Authenticate；不要运行本地 Codex 脚本添加用户级 MCP，不运行独立连接的 `codex mcp login gateway`，也不要假设工具名以 `mcp__gateway__` 开头。未安装/未启用/需重载时按真实状态处理，不能自动创建第二条连接或删除用户已有连接。
 - **独立 Skill + Codex CLI/IDE**：只有确认不是插件模式，才使用下述内置脚本自动添加缺失的用户级 MCP 配置，再通过客户端原生 OAuth 登录。默认不读取 `.env`、PAT 或 OAuth 凭证缓存，不配置静态 Authorization。
@@ -58,12 +58,12 @@ python3 <skill-dir>/scripts/configure_codex_gateway_mcp.py apply --project-root 
 
 插件模式只使用实际插件连接的宿主认证入口；确认该宿主支持预注册 `clientId`、`callbackUrl` 与发现流程，不以配置被接受证明这些字段生效。回调不匹配、scope/resource 缺失或版本不兼容时停止，不能放宽注册/认证策略。
 
-Plugin 的业务 scope 从 [公开 OAuth 配置](../config/oauth-client.json) 生成到 `.mcp.json` 的 `mcpServers.planly.scopes`，与 `oauth` 同级，严格为 `gateway:mcp`。不是 `oauth.scopes`，也不依赖 Skill 正文约束宿主授权。已测原生运行时在 Logto 式宽 scope 发现列表下仍只请求该业务权限；目标桌面版本须单独验证。如果实际请求仍包含 profile、phone、roles、组织等发现权限或遗漏 `gateway:mcp`，应检查插件版本、生成配置和宿主字段支持，停止自动接入，不把给 Logto 应用批量授权作为修复。只记录脱敏的 Client ID、scope、resource 和回调，不收集完整授权链接或 Token。
+Plugin 的 scopes 从 [公开 OAuth 配置](../config/oauth-client.json) 生成到 `.mcp.json` 的 `mcpServers.planly.scopes`，与 `oauth` 同级，严格为 `gateway:mcp`、`offline_access`。不是 `oauth.scopes`，也不依赖 Skill 正文约束宿主授权。`offline_access` 只使支持的授权服务器签发 refresh token，Token 轮换、存储与刷新仍由宿主管理；它不是 Gateway 业务权限。已测原生运行时在 Logto 式宽 scope 发现列表下仍只请求显式列表；目标桌面版本须单独验证。如果实际请求仍包含 profile、phone、roles、组织等发现权限，遗漏任一必需 scope，或授权码换码后没有 refresh token，应检查插件版本、生成配置、宿主字段支持和脱敏的 Logto 交互日志，停止自动接入，不把给 Logto 应用批量授权作为修复。只记录脱敏的 Client ID、scope、resource、grant type、tokenTypes 和回调，不收集完整授权链接或 Token。
 
 对于独立 Skill 刚添加的配置或宿主明确报告需要认证的用户级连接，优先使用原生认证入口。有 Codex CLI 时，由 Agent 执行：
 
 ```bash
-codex mcp login gateway --scopes gateway:mcp
+codex mcp login gateway --scopes gateway:mcp,offline_access
 ```
 
 执行前再次确认当前有效 Gateway 配置仍指向 Skill 端点且没有项目覆盖；在已配置的工程目录运行。该命令由客户端处理 OAuth Discovery、注册、浏览器授权和 Token 存储；不读取客户端凭证文件，不把 Token 提取出来自己调用 HTTP。运行时保持登录进程等待回调，用户在客户端提供的授权链接完成登录、同意授权和必要的 MFA。不要自动代替用户点击授权同意，不要求复制授权码或 Token 到聊天。
