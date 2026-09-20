@@ -58,6 +58,8 @@ python3 <skill-dir>/scripts/configure_codex_gateway_mcp.py apply --project-root 
 
 插件模式只使用实际插件连接的宿主认证入口；确认该宿主支持预注册 `clientId`、`callbackUrl` 与发现流程，不以配置被接受证明这些字段生效。回调不匹配、scope/resource 缺失或版本不兼容时停止，不能放宽注册/认证策略。
 
+Plugin 的业务 scope 从 [公开 OAuth 配置](../config/oauth-client.json) 生成到 `.mcp.json` 的 `mcpServers.planly.scopes`，与 `oauth` 同级，严格为 `gateway:mcp`。不是 `oauth.scopes`，也不依赖 Skill 正文约束宿主授权。已测原生运行时在 Logto 式宽 scope 发现列表下仍只请求该业务权限；目标桌面版本须单独验证。如果实际请求仍包含 profile、phone、roles、组织等发现权限或遗漏 `gateway:mcp`，应检查插件版本、生成配置和宿主字段支持，停止自动接入，不把给 Logto 应用批量授权作为修复。只记录脱敏的 Client ID、scope、resource 和回调，不收集完整授权链接或 Token。
+
 对于独立 Skill 刚添加的配置或宿主明确报告需要认证的用户级连接，优先使用原生认证入口。有 Codex CLI 时，由 Agent 执行：
 
 ```bash

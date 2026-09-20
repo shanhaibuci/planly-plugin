@@ -1,0 +1,17 @@
+{
+  "scopes_supported": [
+    "openid",
+    "offline_access",
+    "profile",
+    "email",
+    "phone",
+    "address",
+    "custom_data",
+    "identities",
+    "roles",
+    "urn:logto:scope:organizations",
+    "urn:logto:scope:organization_roles",
+    "urn:logto:scope:sessions",
+    "urn:logto:scope:trusted_devices"
+  ]
+}

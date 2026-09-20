@@ -34,7 +34,7 @@ class McpConfigTest(unittest.TestCase):
         value.update(fields)
         path.write_text(json.dumps(value))
 
-    def test_manifest_uses_only_documented_http_oauth_fields(self):
+    def test_manifest_uses_tested_server_scopes_and_oauth_fields(self):
         rendered = builder.render_mcp_config()
         self.assertEqual(rendered, (builder.PLUGIN / ".mcp.json").read_bytes())
         self.assertEqual(rendered, builder.render_mcp_config())
@@ -44,6 +44,7 @@ class McpConfigTest(unittest.TestCase):
         self.assertEqual({"mcpServers": {"planly": {
             "type": "http",
             "url": endpoint["origin"] + endpoint["mcp_path"],
+            "scopes": client["scopes"],
             "oauth": {"clientId": client["client_id"], "callbackUrl": client["callback_url"]},
         }}}, value)
         self.assertEqual(["gateway:mcp"], client["scopes"])
@@ -78,6 +79,11 @@ class McpConfigTest(unittest.TestCase):
             {"client_id": ""},
             {"callback_url": "https://arbitrary.example.test/callback"},
             {"scopes": ["gateway:mcp", "admin"]},
+            {"scopes": ["gateway:mcp", "profile"]},
+            {"scopes": ["openid", "profile"]},
+            {"scopes": []},
+            {"scopes": "gateway:mcp"},
+            {"scopes": ["gateway:mcp", "gateway:mcp"]},
         ]:
             with self.subTest(change=change):
                 path = self.config / "oauth-client.json"
@@ -120,6 +126,23 @@ class McpConfigTest(unittest.TestCase):
         (self.plugin / ".mcp.json").symlink_to(target)
         self.assertEqual(1, self.run_main()[0])
         self.assertEqual("keep", target.read_text())
+
+    def test_check_rejects_missing_nested_and_overbroad_generated_scopes(self):
+        output = self.plugin / ".mcp.json"
+        for variant in ("missing", "nested", "overbroad"):
+            with self.subTest(variant=variant):
+                value = json.loads(builder.render_mcp_config(self.plugin))
+                server = value["mcpServers"]["planly"]
+                if variant == "missing":
+                    server.pop("scopes")
+                elif variant == "nested":
+                    server["oauth"]["scopes"] = server.pop("scopes")
+                else:
+                    server["scopes"].append("profile")
+                output.write_text(json.dumps(value))
+                before = output.read_bytes()
+                self.assertEqual(1, self.run_main(check=True)[0])
+                self.assertEqual(before, output.read_bytes())
 
     def test_cli_does_not_use_credentials_or_modify_user_config(self):
         home = Path(self.temp.name) / "home"

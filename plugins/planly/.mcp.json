@@ -3,6 +3,9 @@
     "planly": {
       "type": "http",
       "url": "https://app.qingtingsk.com/mcp",
+      "scopes": [
+        "gateway:mcp"
+      ],
       "oauth": {
         "clientId": "w2l1utjyy8hojfclwn5lh",
         "callbackUrl": "http://127.0.0.1/callback"

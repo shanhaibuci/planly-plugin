@@ -40,6 +40,7 @@ class CodexPluginRuntimeTest(unittest.TestCase):
         self.home.mkdir()
         self.codex_home.mkdir()
         self.auth_required = False
+        self.authorization_scopes = ["gateway:mcp"]
         self.requests = []
         fixture = self
 
@@ -69,15 +70,17 @@ class CodexPluginRuntimeTest(unittest.TestCase):
                         "scopes_supported": ["gateway:mcp"],
                     })
                 elif self.path in ("/.well-known/oauth-authorization-server", "/.well-known/openid-configuration"):
-                    self.reply(200, {
+                    metadata = {
                         "issuer": fixture.base, "authorization_endpoint": fixture.base + "/authorize",
                         "token_endpoint": fixture.base + "/token", "response_types_supported": ["code"],
                         "grant_types_supported": ["authorization_code"],
                         "code_challenge_methods_supported": ["S256"],
                         "token_endpoint_auth_methods_supported": ["none"],
-                        "scopes_supported": ["gateway:mcp"],
                         "authorization_response_iss_parameter_supported": True,
-                    })
+                    }
+                    if fixture.authorization_scopes is not None:
+                        metadata["scopes_supported"] = fixture.authorization_scopes
+                    self.reply(200, metadata)
                 elif fixture.auth_required:
                     self.challenge()
                 else:
@@ -201,7 +204,7 @@ class CodexPluginRuntimeTest(unittest.TestCase):
         resource = self.rpc("mcpServer/resource/read", {"server": status["name"], "uri": URI})
         self.assertEqual({"uri": URI, "mimeType": MIME, "text": HTML}, resource["contents"][0])
 
-    def test_native_plugin_oauth_uses_registered_client_and_discovered_scope_resource(self):
+    def assert_native_plugin_authorization_request(self):
         self.auth_required = True
         status = self.install()
         self.assertEqual("notLoggedIn", status["authStatus"])
@@ -221,6 +224,25 @@ class CodexPluginRuntimeTest(unittest.TestCase):
         self.assertTrue(query["code_challenge"])
         self.assertFalse(any("register" in entry[1] for entry in self.requests))
         # Stop before consent/code exchange; no real browser or account is used.
+
+    def test_native_plugin_oauth_uses_registered_client_explicit_scope_and_discovered_resource(self):
+        self.assert_native_plugin_authorization_request()
+
+    def test_native_plugin_scopes_override_broad_logto_discovery(self):
+        # Regression: the real issuer advertises identity/organization scopes,
+        # while protected-resource metadata requires gateway:mcp. The login RPC
+        # MUST omit its scopes override, so the plugin declaration is exercised.
+        self.authorization_scopes = json.loads(
+            (ROOT / "tests/fixtures/logto-discovery-scopes.json").read_text()
+        )["scopes_supported"]
+        self.assertNotIn("gateway:mcp", self.authorization_scopes)
+        self.assertIn("profile", self.authorization_scopes)
+        self.assertIn("urn:logto:scope:organizations", self.authorization_scopes)
+        self.assert_native_plugin_authorization_request()
+
+    def test_native_plugin_scopes_when_issuer_omits_supported_scopes(self):
+        self.authorization_scopes = None
+        self.assert_native_plugin_authorization_request()
 
 
 if __name__ == "__main__":

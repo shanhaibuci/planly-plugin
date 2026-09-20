@@ -29,14 +29,16 @@ def render_mcp_config(plugin: Path = PLUGIN) -> bytes:
     url = public_config.system_mcp_url(endpoint)
     if not url.startswith("https://"):
         raise public_config.ConfigurationError("Plugin MCP requires HTTPS")
-    # Use documented plugin camelCase OAuth fields, not config.toml snake_case.
-    # The host obtains gateway:mcp scope and resource from protected-resource
-    # discovery. Do not invent unsupported plugin fields or static auth headers.
+    # The server-level scopes field is honored by the tested native runtime.
+    # oauth.scopes is NOT equivalent. Leaving scopes implicit lets a host choose
+    # the issuer's full OIDC discovery list instead of the MCP business scope.
+    # Resource identity still comes from protected-resource discovery.
     payload = {
         "mcpServers": {
             "planly": {
                 "type": "http",
                 "url": url,
+                "scopes": client["scopes"],
                 "oauth": {
                     "clientId": client["client_id"],
                     "callbackUrl": client["callback_url"],

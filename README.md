@@ -8,16 +8,18 @@ Planly 场景求解插件：Skill + 插件自带 Gateway MCP + 宿主 OAuth；�
 | Skill 标识 | `planly-solver` |
 | 插件内 MCP 名 | `planly`（业务工具仍为 `gateway.*`） |
 | 展示名称 | Planly 场景求解 |
-| Plugin / Skill 版本 | **1.3.0** |
+| Plugin / Skill 版本 | **1.3.1** |
 
-**v1.3.0：独立 MCP 接入与新版 Planly Logo。** 变更及升级说明见 [发布说明](docs/releases/v1.3.0.md)。自动化检查与真实客户端验收分别记录在 [验收清单](docs/acceptance.md)，不能把安装成功或工具可调用当成 UI 已就绪。
+**v1.3.1：OAuth 最小 scope 修复。** 保留独立 MCP 接入与新版 Planly Logo，变更及升级说明见 [发布说明](docs/releases/v1.3.1.md)。自动化检查与真实客户端验收分别记录在 [验收清单](docs/acceptance.md)，不能把安装成功或工具可调用当成 UI 已就绪。
+
+**本版修复：** 显式配置服务器级 OAuth scopes，避免宿主采用 Logto 的完整发现列表并遗漏 `gateway:mcp`。旧 `v1.3.0` tag 不含此修复；不会自动替用户更新客户端。详见 [scope 规范与验证边界](docs/oauth-scopes.md)。
 
 ## 安装与使用
 
-使用 `v1.3.0` tag 安装；不要用旧 tag 验证本轮改造：
+使用 `v1.3.1` tag 安装；不要用旧 tag 验证本轮修复：
 
 ```bash
-codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.0
+codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.1
 ```
 
 在支持 Plugins Directory 的桌面客户端找到 **Planly 场景求解**并安装，启用插件内 `planly` MCP，在宿主 Authenticate 入口完成 OAuth，然后开启新会话：
@@ -44,7 +46,7 @@ $planly-solver 查看我最近成功的任务，并展示地图和 Gantt
 - `skills/planly-solver/config/oauth-client.json`：原有公开 Client ID、回调和最小 scope，不含秘密。
 - `scripts/build_mcp_config.py`：确定性生成 `.mcp.json`，`--check` 检查同步而不写文件。
 
-使用官方插件字段 `type=http`、`url`、`oauth.clientId`、`oauth.callbackUrl`。`gateway:mcp` scope 和 resource 必须由宿主根据 Gateway Protected Resource Metadata 正确请求，不能用 TOML 的字段名或未经支持的 JSON 字段冒充有效配置。[插件 OAuth](https://learn.chatgpt.com/docs/extend/mcp#plugin-provided-mcp-servers)
+使用 `type=http`、`url`、`oauth.clientId`、`oauth.callbackUrl`，并由同一公开源生成 **`mcpServers.planly.scopes=["gateway:mcp"]`**（与 `oauth` 同级，不是 `oauth.scopes`）。服务器级 scopes 已通过 Codex 0.155.0 原生授权请求的隔离验证；目标桌面版本仍须实测。resource 继续来自 Gateway Protected Resource Metadata，不伪造第二套资源身份；不能再假定发现文档会自动选择最小业务权限。[插件 OAuth](https://learn.chatgpt.com/docs/extend/mcp#plugin-provided-mcp-servers)
 
 已有公开 OAuth Client ID、回调、端点未改，不重新注册或放宽服务端认证。宿主若忽略公开客户端配置、使用不匹配回调、请求错误 scope/resource 或要求 DCR，应停止并检查兼容性；不要降级 PAT、放宽安全校验或添加第二条用户级 MCP。OAuth 服务端的品牌展示仍由管理员单独维护，删除旧 App 引用不等于修改认证服务名称。
 
@@ -75,6 +77,13 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 公开配置更新后执行 `python3 scripts/build_mcp_config.py`。自动化测试使用临时目录和模拟数据，不连接真实账号、不创建任务、不写用户 Codex 配置。真实宿主 OAuth、MCP Apps、地图网络与展示效果按验收清单独立记录。
 
 设置 `PLANLY_CODEX_BIN` 可额外运行真实 Codex 二进制的隔离协议测试，详见验收清单；默认不自动安装客户端。原生 MCP/OAuth 请求与资源读取通过仍不代表实际桌面 UI 已渲染。
+
+## 1.3.1 变更
+
+- 从既有公开 OAuth 源生成 `mcpServers.planly.scopes=["gateway:mcp"]`，与 `oauth` 同级；不扩大 Logto 应用权限。
+- 增加宽发现列表、缺失 scopes、字段误放及额外权限的回归检查，覆盖此次 `invalid_scope` 的触发条件。
+- 56 项测试通过（含 4 项原生隔离测试）；真实公网授权前置检查进入登录流程，完整桌面登录与 UI 仍需独立验收。
+- 保持 Gateway 地址、公开 Client ID、回调、Logo 和既有 MCP Apps 功能不变。
 
 ## 1.3.0 变更
 
