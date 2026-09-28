@@ -23,7 +23,8 @@ access:
   connection_status: unverified
 ui:
   host_support: unknown
-  display_tool_name: null
+  map_display_tool_name: null
+  gantt_display_tool_name: null
   display_job_id: null
   render_status: unverified
 intent: connect | create | integrate | query | explain
@@ -103,7 +104,7 @@ evidence:
 - 只有未决必填问题已解决、关键映射已确认且明显非法值已清除时，才能进入确认阶段。
 - 只有 `confirmation.confirmed_revision == draft.revision` 时才能调用创建 tool。
 - `job.job_id` 只记录 Gateway 明确返回或近期任务查询能够确认的任务标识。
-- `ui.display_tool_name` 只来自该任务的 Gateway 展示提示，并与当前可信工具目录核对；换任务、换连接、错误版本、权限失效或目录刷新后重新发现，不复用旧映射。
+- `ui.map_display_tool_name` / `ui.gantt_display_tool_name` 只来自该任务的 Gateway 展示提示，并分别与当前可信工具目录核对；换任务、换连接、错误版本、权限失效或目录刷新后重新发现，不复用旧映射，也不从其中一个名称推导另一个。
 - `ui.host_support` 只有宿主明确完成 MCP Apps 协商才记 supported；没有图形宿主实际证据时 `render_status` 仍为 unverified。只读工具调用成功不证明 HTML 已渲染或地图已联网。无 UI 时按 [展示参考](mcp-apps-ui.md) 降级，不调用写工具修复展示。
 
 ## 失效与回退

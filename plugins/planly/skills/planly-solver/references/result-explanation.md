@@ -4,7 +4,7 @@
 
 按以下顺序使用信息：
 
-1. `gateway.solver_jobs.get_detail` 返回的任务状态、失败信息、公开约束摘要和安全 `engine_view`；
+1. `gateway.solver_jobs.get_detail` 返回的任务状态、失败信息和公开约束摘要；该 MCP 工具是基础详情投影，不返回 `result_summary`、`engine_view` 或 `pending_engine_view`；
 2. `gateway.solver_jobs.get_summary` 返回的 `result_score` 与 `result_summary`；
 3. `gateway.image_versions.get_result_summary_schema` 对摘要字段的定义；
 4. 当前会话中已确认的初始场景草稿；
@@ -40,7 +40,7 @@
 
 ## VRP0 分析角度
 
-只有 `gateway.solver_jobs.get_detail` 返回的顶层 `engine_view.kind=vrp0` 时，使用以下角度：
+只有 `gateway.solver_jobs.get_summary` 及其对应摘要 Schema 明确返回 VRP0 的模型可见字段时，才对已实际返回的字段使用以下角度。地图 / Gantt 工具的 `_meta.gateway_ui.engine_view` 只供当前 App 绘图，不视为 Agent 已获得的分析证据：
 
 - **硬资格**：技能、区域、工单类型、班次、时间窗、容量和必须/禁止关系；
 - **时序可行性**：到达时间、服务时长、前后工单顺序、班次结束时间；

@@ -76,7 +76,7 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 
 只有任务成功终态才读取结果摘要、摘要 Schema 和结果入口。读取 [结果解释](references/result-explanation.md)，默认按整体可行性、派单成功与未派数量、公开未派原因、总里程、总时间、非零吨公里费用、工程师派单顺序和详情入口展示。结合得分摘要判断和解释，但默认不展示原始 hard/soft score。把结论分为可确认事实、合理推断和证据不足；不得伪装成引擎真实决策链。
 
-用户查看任务、地图、Gantt 或工程师路线时，按 [MCP Apps 展示](references/mcp-apps-ui.md) 使用已授权只读 UI。成功结果概览可附会话内卡片；针对性问题先回答，不强制额外卡片。使用 Gateway 返回的 `display_tool_name`，不拼版本工具名；无 UI 时保留摘要和网页入口，不声称已显示。
+用户查看任务、地图、Gantt 或工程师路线时，按 [MCP Apps 展示](references/mcp-apps-ui.md) 使用已授权只读 UI。成功结果先用模型可见安全数据回答详情；需要可视化时按意图选择 Gateway 返回的 `map_display_tool_name` 或 `gantt_display_tool_name`，不拼版本工具名。地图下方 Gantt 入口产生新会话意图后，在下一条消息调用最新发现的 Gantt 工具。无 UI 时保留摘要和网页入口，不声称已显示。
 
 结果不可解或质量不满足用户目标时，只提出业务数据或合法参数调整建议。用户决定调整后返回场景分析或参数构建，生成新 revision，并重新经过积分提示和人工确认。
 
@@ -96,7 +96,7 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 - `gateway.solver_jobs.get_summary`
 - `gateway.solver_jobs.get_result_access`
 
-额外允许当前可信 Gateway 目录中的只读 UI tools：`gateway.ui.show_choices`，以及 Gateway 按任务返回的 `display_tool_name` 所指向的版本化结果工具。必须与当前目录交叉核对，只给 schema 允许的 `job_id`、`view`、可选 `engineer_id`；不自行拼接 `gateway.ui.result_...`。选择卡只传意图，不等于创建授权，创建确认门不变。工具禁用、版本不匹配或权限失效时停止并按展示参考降级，不探测其他版本或账号。
+额外允许当前可信 Gateway 目录中的只读 UI tools：`gateway.ui.show_choices`，以及 Gateway 按任务返回的地图 / Gantt 版本化结果工具。必须与当前目录交叉核对：地图只传 schema 允许的 `job_id` 和可选 `engineer_id`，Gantt 只传 `job_id`；不传 `view`，不自行拼接 `gateway.ui.map_result_...` 或 `gateway.ui.gantt_result_...`。选择卡只传意图，不等于创建授权，创建确认门不变。工具禁用、版本不匹配或权限失效时停止并按展示参考降级，不探测其他版本或账号。
 
 先用只读 tool 获取事实，再推荐、构建或解释。不要把历史经验当作当前用户的镜像、权限、Schema、积分或任务状态。生成到用户工程的日常脚本优先调用 Gateway REST API，不要求运行环境加载 Skill 或 MCP 客户端。
 

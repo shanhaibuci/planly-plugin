@@ -130,10 +130,10 @@ class PluginPackageTest(unittest.TestCase):
         skill = (SKILL / "SKILL.md").read_text()
         ui = (SKILL / "references/mcp-apps-ui.md").read_text()
         for marker in (
-            "display_tool_name", "display_tools_by_job_id", "JSON TextContent",
+            "map_display_tool_name", "gantt_display_tool_name", "display_tools_by_job_id", "JSON TextContent",
             "_meta.ui.resourceUri", "resources/read", "text/html;profile=mcp-app",
             "当前可信目录", "不根据 image_version_id 拼接工具名",
-            "view=map|gantt", "长工程师 ID 不截断", "默认不轮询",
+            "不传 `view`", "长工程师 ID 不截断", "默认不轮询",
             "只回传意图，不创建/修改任务", "detail_page_url",
             "权限错误", "不能代替图形宿主验收",
         ):
@@ -141,6 +141,27 @@ class PluginPackageTest(unittest.TestCase):
         self.assertIn("gateway.ui.show_choices", skill)
         self.assertIn("创建确认门不变", skill)
         self.assertIn("不声称已显示", skill)
+
+    def test_map_and_gantt_have_separate_tools_and_state(self):
+        skill = (SKILL / "SKILL.md").read_text()
+        ui = (SKILL / "references/mcp-apps-ui.md").read_text()
+        workflow = (SKILL / "references/workflow-state.md").read_text()
+        for name in ("map_display_tool_name", "gantt_display_tool_name"):
+            self.assertIn(name, skill)
+            self.assertIn(name, ui)
+            self.assertIn(f"  {name}: null", workflow)
+        self.assertNotIn("  display_tool_name: null", workflow)
+        self.assertNotIn("view=map|gantt", ui)
+        self.assertIn("Gantt 工具只传 `job_id`", ui)
+        self.assertIn("地图失败不表示 Gantt 失败", ui)
+        self.assertIn("在下一条消息调用它", ui)
+
+    def test_result_explanation_uses_model_visible_summary_not_ui_metadata(self):
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        self.assertIn("不返回 `result_summary`、`engine_view` 或 `pending_engine_view`", explanation)
+        self.assertIn("gateway.solver_jobs.get_summary", explanation)
+        self.assertIn("_meta.gateway_ui.engine_view", explanation)
+        self.assertIn("不视为 Agent 已获得的分析证据", explanation)
 
     def test_readme_discloses_host_scope_and_real_ui_acceptance(self):
         readme = (ROOT / "README.md").read_text()

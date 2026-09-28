@@ -63,9 +63,13 @@ Planly Plugin 自带 MCP → Gateway /mcp
                            客户端沙箱：会话内 / 全屏
 ```
 
-公共卡片由 Gateway 提供；地图、Gantt、单工程师路线和规划回放页面由引擎随 ImageVersion 交付，再由 Gateway 校验、导入和分发。Plugin 不捆绑这些 HTML，不直接访问引擎、业务 REST 或完整结果归档。
+公共卡片由 Gateway 提供；引擎随 ImageVersion 分别交付地图和 Gantt 两份资源，再由 Gateway 校验、导入和分发。全部 / 单工程师路线属于地图状态，规划回放属于地图大屏，不新增第三份资源。Plugin 不捆绑这些 HTML，不直接访问引擎、业务 REST 或完整结果归档。
 
-Skill 从 Gateway 的任务展示提示获取 `display_tool_name`，与当前可信工具目录核对后请求只读展示，不拼版本工具名。无 UI、版本未就绪或权限失效时明确说明，提供可用摘要与真实网页入口；不会创建新任务或换版本“修复”展示。选择卡只回传意图，创建任务仍需当前草稿的明确确认。协议机制见 [官方 MCP Apps UI 文档](https://developers.openai.com/plugins/build/chatgpt-ui)。
+Skill 从 Gateway 的任务展示提示分别获取 `map_display_tool_name`、`gantt_display_tool_name`，与当前可信工具目录核对后按意图请求只读展示，不拼版本工具名。地图工具只传 `job_id` 和可选 `engineer_id`，Gantt 工具只传 `job_id`，不传 `view` 切换页面。地图下方 Gantt 入口只发送意图，Skill 在下一条消息重新核对并调用 Gantt 工具。无 UI、版本未就绪或权限失效时明确说明，提供可用摘要与真实网页入口；不会创建新任务或换版本“修复”展示。选择卡只回传意图，创建任务仍需当前草稿的明确确认。协议机制见 [官方 MCP Apps UI 文档](https://developers.openai.com/plugins/build/chatgpt-ui)。
+
+上述双工具 / 双资源为已冻结的接入契约，不代表 Gateway、引擎或真实宿主已完成迁移。提示缺失或目录未就绪时降级为摘要和网页入口，不回退旧单工具契约，也不把只读调用成功当作 UI 已渲染。
+
+2026-09-28 已同步 Gateway 的 Skill 提交 `8a34acd8`；范围和未验收边界见 [同步记录](docs/gateway-skill-sync.md)。本次保留版本 `1.3.2`，不移动既有 tag。
 
 ## 本地验证
 

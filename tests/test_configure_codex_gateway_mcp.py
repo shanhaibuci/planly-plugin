@@ -542,6 +542,8 @@ class ConfigureCodexGatewayMcpTest(unittest.TestCase):
         path = self.root / "oauth-client.json"
         for value in ({**self.oauth_client, "client_secret": PAT},
                       {**self.oauth_client, "callback_url": "https://other.example/callback"},
+                      {**self.oauth_client, "scopes": ["gateway:mcp"]},
+                      {**self.oauth_client, "scopes": ["offline_access", "gateway:mcp"]},
                       {**self.oauth_client, "scopes": ["admin"]}):
             path.write_text(json.dumps(value))
             with self.assertRaises(MODULE.ConfigurationError):
