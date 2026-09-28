@@ -1,6 +1,6 @@
 # Planly 独立 MCP 与 MCP Apps 验收
 
-版本：1.3.2。发布包内实现与真实宿主体验分开验收，未验证不算通过。
+版本：1.3.3。发布包内实现与真实宿主体验分开验收，未验证不算通过。
 
 ## 自动化范围
 
@@ -60,17 +60,24 @@ v1.3.2 将公开配置和生成的 `.mcp.json` 精确更新为 `gateway:mcp offl
 | Codex 0.155.0 原生隔离回归 | 4 项通过；授权 URL 的 scope 精确为 `gateway:mcp offline_access`，同时覆盖最小发现、Logto 式宽发现、缺失 scope 发现和 MCP UI 资源读取 |
 | 真实 GPT Desktop | 尚未安装 v1.3.2；AuthorizationCode 换码返回 RefreshToken、到期 RefreshToken grant 与轮换仍待验证 |
 
+## v1.3.3 Skill 同步与发布校验（2026-09-28）
+
+- 同步来源为 Gateway `8a34acd8`，Plugin 与内置 Skill 统一升级到 `1.3.3`；除版本声明外，公开 Skill 文件与来源一致。
+- 地图 / Gantt 双工具映射、参数边界和模型可见摘要规则纳入包合约测试；公开端点、OAuth 配置、生成的 `.mcp.json` 和品牌素材不变。
+- 58 项测试中 54 项通过，4 项可选原生客户端测试因未指定 `PLANLY_CODEX_BIN` 跳过；Skill / Plugin 结构校验、MCP 配置一致性及差异检查通过。
+- 没有重测真实 OAuth、地图网络或图形 UI；双工具契约冻结不代表 Gateway / 引擎迁移完成。
+
 ## 真实目标客户端验收（全部待验证）
 
 | 项目 | 操作及通过条件 | 当前状态 |
 | --- | --- | --- |
 | 安装与品牌 | 从本版本安装，显示 Planly 名称和图标；无历史远端 App 依赖 | 未验证 |
 | 独立连接 | 插件提供一条 Planly MCP；无重复用户级连接或错误账号切换 | 未验证 |
-| OAuth 授权请求 | 使用既有公开 client_id、S256、登记回调、正确 resource 与恰好 `gateway:mcp offline_access`；不误走 DCR、不照搬 OIDC 宽列表 | v1.3.1 实测只有 `gateway:mcp`；v1.3.2 待发布、更新后重测 |
+| OAuth 授权请求 | 使用既有公开 client_id、S256、登记回调、正确 resource 与恰好 `gateway:mcp offline_access`；不误走 DCR、不照搬 OIDC 宽列表 | v1.3.1 实测只有 `gateway:mcp`；当前版本更新、重新授权后待重测 |
 | OAuth 完整流程 | AuthorizationCode 换码返回 AccessToken 与 RefreshToken；access token 到期后出现 RefreshToken grant 并完成轮换；只读工具调用与撤销正常，无凭据泄漏 | 未验证 |
 | UI 能力协商 | 宿主 initialize 声明正确的 UI 扩展/MIME，Gateway 返回协商能力 | 未验证 |
 | 公共 UI | 真实镜像、积分或任务卡能从 resources/read 获取 HTML 并完成桥接渲染 | 未验证 |
-| 版本化结果 | 真实成功任务与生效 ImageVersion 匹配；显示实际地图/Gantt/单工程师列表 | 未验证 |
+| 版本化结果 | 真实成功任务与生效 ImageVersion 匹配；分别使用地图 / Gantt 展示工具和对应资源，单工程师路线属于地图状态；不传 `view` | 未验证 |
 | 全屏/刷新 | inline 精简、全屏请求及拒绝处理、只读刷新、选择和游标保持 | 未验证 |
 | 地图/规划回放 | 真实 CSP、图商 browser key/网络通过，规划回放不伪装实时位置 | 未验证 |
 | 降级与隔离 | 无 UI、失效版本、认证/权限失效、多卡隔离及迟到响应正确 | 未验证 |

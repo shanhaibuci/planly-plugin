@@ -36,6 +36,9 @@ class PluginPackageTest(unittest.TestCase):
         self.assertIn(f"| Plugin / Skill 版本 | **{version}** |", readme)
         self.assertEqual([f"v{version}"], re.findall(r"--ref (\S+)", readme))
         self.assertIn(f"## {version} 变更", readme)
+        release = ROOT / "docs/releases" / f"v{version}.md"
+        self.assertTrue(release.is_file(), "Current release notes must exist")
+        self.assertIn(f"# Planly Plugin v{version}", release.read_text())
 
     def test_direct_mcp_has_no_legacy_app_dependency_or_embedded_ui(self):
         self.assertFalse((PLUGIN / ".app.json").exists())
