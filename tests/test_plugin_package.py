@@ -166,6 +166,16 @@ class PluginPackageTest(unittest.TestCase):
         self.assertIn("_meta.gateway_ui.engine_view", explanation)
         self.assertIn("不视为 Agent 已获得的分析证据", explanation)
 
+    def test_parameter_guidance_distinguishes_omitted_null_and_empty_without_inference(self):
+        parameters = (SKILL / "references/parameter-building.md").read_text()
+        for marker in (
+            "字段省略、显式 `null` 和空数组", "`required`", "`minItems`", "示例不",
+            "隐含必填", "保留用户已有指派及顺序", "不假设引擎会自动补齐",
+            "不猜测字段修补后自动重提收费任务",
+        ):
+            self.assertIn(marker, parameters)
+        self.assertNotIn("agents[].tickets", parameters)
+
     def test_readme_discloses_host_scope_and_real_ui_acceptance(self):
         readme = (ROOT / "README.md").read_text()
         self.assertIn("Desktop only", readme)
