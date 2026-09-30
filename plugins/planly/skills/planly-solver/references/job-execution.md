@@ -2,7 +2,7 @@
 
 ## 创建前检查与确认
 
-只接受当前 ImageVersion、Schema 和参数构建阶段已经完成的草稿。调用 `gateway.credits.get_me`，然后使用业务语言按固定分组展示，不输出无层次的流水账：
+只接受当前 ImageVersion、Schema 和参数构建阶段已经完成的草稿。展示创建摘要前，必须同时满足 `location_validation.status=passed` 和 `location_validation.checked_revision == draft.revision`；不满足时返回参数构建阶段修复或重新校验，不查询积分、不展示确认问题。门禁通过后调用 `gateway.credits.get_me`，然后使用业务语言按固定分组展示，不输出无层次的流水账：
 
 1. **求解设置**：求解能力名称、图商、期望求解时长，以及路线绘制开启、关闭或受当前能力限制；
 2. **资源与任务**：工程师、车辆等资源，以及待处理工单或其他对象的数量和关键属性；
@@ -21,11 +21,11 @@ base_credit_cost + ceil(求解秒数 / 10) × duration_credit_per_10s
 
 统一询问：“是否按以上参数创建求解任务？”不向用户展示 revision、“字段映射”、原始字段路径或其他内部状态。只有用户在看到该摘要后作出明确肯定答复，才能把当前内部 revision 记为 `confirmed_revision` 并调用 `gateway.solver_jobs.create`。
 
-此前的“可以”“继续”等回复不能跨草稿复用。任一创建字段变化后立即清空确认，重新执行辅助检查、积分查询、摘要展示和确认。
+此前的“可以”“继续”等回复不能跨草稿复用。任一创建字段变化后立即清空确认，把地点校验重置为 `pending`，并对新 revision 重新执行地点检查、其他辅助检查、积分查询、摘要展示和确认。地点、ID、引用或坐标修复不得沿用旧确认。
 
 ## 创建任务
 
-调用 `gateway.solver_jobs.create` 时只传当前草稿中的合法字段。只有 tool 明确返回非空 `job_id` 和任务状态时，才能判定求解任务创建成功并保存：
+调用 `gateway.solver_jobs.create` 前再次确认地点校验仍为 `passed`、其 `checked_revision` 与当前草稿 revision 相等，且 `confirmed_revision` 也等于当前草稿 revision；任一条件不成立都不得调用。调用时只传当前草稿中的合法字段。只有 tool 明确返回非空 `job_id` 和任务状态时，才能判定求解任务创建成功并保存：
 
 - `job_id`；
 - Gateway 返回的初始状态；
@@ -38,7 +38,7 @@ base_credit_cost + ceil(求解秒数 / 10) × duration_credit_per_10s
 - `succeeded`：才能说明求解成功并进入结果解释；
 - `failed`、`canceled`、`timed_out`、`archive_failed`：说明任务曾创建成功，但本次求解或归档没有成功。
 
-Gateway 返回字段或业务错误时，保留 `code`、`message` 和 `details` 事实，给出对应修正建议。修改草稿后必须生成新 revision 并重新确认。
+Gateway 返回字段或业务错误时，保留 `code`、`message` 和 `details` 事实，给出对应修正建议。修改草稿后必须生成新 revision、重新执行地点校验并重新确认；不得自动重提收费任务。
 
 ## 结果不明确时
 

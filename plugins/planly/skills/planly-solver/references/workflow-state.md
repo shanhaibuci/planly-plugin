@@ -64,6 +64,12 @@ mapping:
 location_resolution:
   candidates: []
   confirmed: []
+location_encoding:
+  mode: null # centralized_refs | inline_objects
+  source: null # schema_preferred | existing_valid_payload
+location_validation:
+  checked_revision: null
+  status: pending # pending | passed | failed
 draft:
   revision: 0
   value: null
@@ -96,13 +102,17 @@ evidence:
 - 图商验证支持后，`map_selection.source` 按用户明确指定或地区默认分别记为 `user_explicit`、`regional_default`，`value` 写入草稿顶层 `map_provider`。地区默认无需单独确认，用户明确指定优先；未解决的地点或能力冲突不能标为已确定。最终创建确认仍覆盖实际镜像和图商。
 - 约束方案名称、说明和分值只来自当前 ImageVersion 详情；`selected_preset_id` 仅用于会话解释，不得作为创建字段提交。
 - `schema.loaded_for_image_version_id` 必须等于当前 `image_version.id`，否则不得构建或提交草稿。
+- `location_encoding.mode` 只能根据当前实时 `request_schema` 允许的地点结构、其中明确给出的首选方式及已有草稿的实际合法结构确定，不按镜像名称、版本号或历史引擎经验推断。新草稿采用 Schema 明确首选的模式；全部地点已经以合法内嵌对象存在时可记录 `inline_objects / existing_valid_payload`。
+- `centralized_refs` 表示业务对象地点全部使用字符串 ID，并由 Schema 定义的集中地点集合提供目标；`inline_objects` 表示业务对象地点全部使用完整内嵌对象且没有字符串地点引用。两种形式同时出现属于混合草稿，不能设置为已通过。
+- Schema 允许集中结构时，混合草稿必须先规范化并记录为 `centralized_refs / schema_preferred`：保留已有 ID，为确实缺失且 Schema 要求 ID 的地点只生成一次稳定 ID，替换内嵌地点引用。该转换属于草稿变化，必须增加 revision、清空创建确认并重新校验；无法无损转换时保持 `failed`，不得静默合并同名地点。
+- 每次检查当前草稿后，把 `location_validation.checked_revision` 设为被检查的 revision；只有地点模式、位置完整性、ID 唯一性、引用和坐标均通过时才设置 `status=passed`，否则设置 `status=failed` 并保留阻断问题。
 - 只有 `schema.composite_validation_view_ready` 为 `true` 且约束相关场景事实充分时，才能设置 `constraint_selection.recommended_preset_id` 或 `selected_preset_id`。
-- 任一创建字段变化都必须增加 `draft.revision` 并把 `confirmation.confirmed_revision` 清空。
+- 任一创建字段变化都必须增加 `draft.revision`，把 `confirmation.confirmed_revision` 和 `location_validation.checked_revision` 清空，并把 `location_validation.status` 重置为 `pending`；即使地点字段未变，也必须对新 revision 重新执行地点检查。
 - `draft.revision` 和 `confirmation.confirmed_revision` 只用于 Agent 内部绑定确认，不向业务用户展示，也不要求用户复述 revision 编号。
 - 地址解析候选不是最终事实；只有用户确认的 POI 或坐标才能进入字段映射和草稿。
 - 网点、仓库或站点位置适用同一规则；存在网点引用但没有已确认有效位置时必须保持为阻断缺口。
-- 只有未决必填问题已解决、关键映射已确认且明显非法值已清除时，才能进入确认阶段。
-- 只有 `confirmation.confirmed_revision == draft.revision` 时才能调用创建 tool。
+- 只有未决必填问题已解决、关键映射已确认、明显非法值已清除，并且 `location_validation.status == passed` 与 `location_validation.checked_revision == draft.revision` 同时成立时，才能展示创建摘要并进入确认阶段。
+- 只有上述地点校验门仍成立且 `confirmation.confirmed_revision == draft.revision` 时才能调用创建 tool。
 - `job.job_id` 只记录 Gateway 明确返回或近期任务查询能够确认的任务标识。
 - `ui.map_display_tool_name` / `ui.gantt_display_tool_name` 只来自该任务的 Gateway 展示提示，并分别与当前可信工具目录核对；换任务、换连接、错误版本、权限失效或目录刷新后重新发现，不复用旧映射，也不从其中一个名称推导另一个。
 - `ui.host_support` 只有宿主明确完成 MCP Apps 协商才记 supported；没有图形宿主实际证据时 `render_status` 仍为 unverified。只读工具调用成功不证明 HTML 已渲染或地图已联网。无 UI 时按 [展示参考](mcp-apps-ui.md) 降级，不调用写工具修复展示。
@@ -118,6 +128,8 @@ evidence:
 - 当前 ImageVersion 的约束方案、推荐和选择；
 - 字段映射、缺口和基于旧版本得出的风险；
 - 地址解析候选及已确认位置映射；
+- 地点编码模式及其来源；
+- 地点校验状态及其绑定的 revision；
 - 创建草稿及其 revision 对应的确认；
 - 未提交草稿关联的任务状态。
 
@@ -125,7 +137,7 @@ evidence:
 
 ### 草稿改变
 
-`image_version_id`、`map_provider`、`expected_solve_duration`、`request_payload` 或 `constraint_overrides` 任一字段变化都视为新 revision。更换约束方案或调整个别罚分后必须重新计算 `constraint_overrides`；只要最终覆盖项发生变化，就重新执行辅助检查、积分查询、摘要展示和用户确认。
+`image_version_id`、`map_provider`、`expected_solve_duration`、`request_payload` 或 `constraint_overrides` 任一字段变化都视为新 revision。新 revision 必须把地点校验重置为 `pending` 并重新检查，地点修复和混合结构规范化也不例外。更换约束方案或调整个别罚分后必须重新计算 `constraint_overrides`；只要最终覆盖项发生变化，就重新执行辅助检查、积分查询、摘要展示和用户确认。
 
 `map_provider` 改变时同步更新 map_selection 的值与来源，清空地址解析候选和已确认位置映射，并使用新图商重新解析。
 

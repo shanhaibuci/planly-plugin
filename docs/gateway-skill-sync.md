@@ -32,3 +32,15 @@
 - 同步插件版本、安装说明、发布说明与说明文字测试；公开端点、OAuth、`.mcp.json`、品牌资源及全部旧 tag 保持不变。
 
 此同步不部署 Gateway 或引擎，不修改用户客户端配置，不表示已经更新用户安装或完成真实 WorkBuddy 验收。验证与升级口径见 [v1.3.4 发布说明](releases/v1.3.4.md)。
+
+## v1.3.5 地点编码门禁同步（2026-09-29）
+
+来源：Gateway 本次实现工作区的 `skills/planly-solver/`。该来源尚未提交，因此本节不填写提交 hash；同步时以两个目录的逐字节比对为准。
+
+- 16 个公开 Skill 文件逐字节一致，Plugin、Skill 与根版本统一为 `1.3.5`。
+- 地点模式在读取当前 ImageVersion 的实时 `request_schema` 后确定，不按镜像名称或版本号分支。新草稿采用 Schema 明确首选的集中引用，已有且全部合法的内嵌草稿可以保持内嵌。
+- Skill 显式维护 `location_encoding` 与 `location_validation`。集中模式检查集中集合、POI ID 非空且唯一、`referenceIds ⊆ poiIds`、业务对象空地点与被引用 POI 坐标；内嵌模式禁止字符串地点引用并要求完整有效对象。
+- 混合结构必须在确认前按 Schema 转为集中引用并提升 revision；任何草稿变化使地点检查和旧确认失效。只有 `status=passed` 且 `checked_revision` 等于当前 revision 时才可确认和调用创建 tool，失败或修复后不得自动重提。
+- 同步范围只包括 Skill 指导、客户端门禁、Plugin 版本、说明和测试；配套引擎变更只涉及 OpenAPI/Schema 契约说明，不改变 Gateway 或引擎运行时。公开端点、OAuth、`.mcp.json`、品牌和历史 tag 均未修改。
+
+此门禁降低正常 Skill 流程遗漏地点集合或产生悬空引用的概率，但不是服务端语义保证。未加载或绕过 Skill 的客户端仍可能提交异常请求。本次发布创建新 tag `v1.3.5`，不移动既有 tag；未部署服务、修改用户安装或执行真实求解任务。详情见 [v1.3.5 发布说明](releases/v1.3.5.md)。

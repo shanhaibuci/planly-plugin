@@ -96,12 +96,34 @@ ImageVersion 按[场景分析](scenario-analysis.md)选定并验证后即可调�
 
 ## 地点结构
 
-`plan.pois` 是否存在或必填、POI ID 是否必填，以及地点字段使用 ID 引用还是内嵌对象，全部由当前 ImageVersion Schema 决定：
+`plan.pois` 是否存在或必填、POI ID 是否必填，以及地点字段使用 ID 引用还是内嵌对象，全部由当前 ImageVersion 的实时 `request_schema` 决定。先从 Schema 允许的类型、引用关系和字段说明识别集中地点集合与业务对象地点字段，再维护以下内部状态；不得按镜像名称或版本号启用这些规则：
 
-- Schema 要求集中 POI 和 ID 引用时，为每个唯一地点生成稳定且唯一的业务 ID，填充 Schema 要求的 POI 字段，并在创建前验证所有引用能够解析；
-- Schema 允许内嵌地点对象时，按当前契约构建，不为迎合某个历史引擎而强制改写成集中 `plan.pois`；
-- Schema 同时允许多种结构但没有提供选择依据时，不凭经验猜测引擎偏好；把契约歧义作为阻断问题反馈。
-- 不用空字符串、空对象、只有城市名称的对象或悬空 ID 充当位置。若 Schema 同时定义网点引用和独立起点字段，网点引用不自动替代起点；仅当用户事实明确两者为同一地点时，才复用同一已解析 POI。
+```yaml
+location_encoding:
+  mode: centralized_refs | inline_objects
+  source: schema_preferred | existing_valid_payload
+location_validation:
+  checked_revision: null
+  status: pending | passed | failed
+```
+
+模式选择遵守以下顺序：
+
+1. 从空白构建新草稿时，采用 Schema 明确支持且首选的模式，并把来源记录为 `schema_preferred`。Schema 同时允许两种形式并明确建议集中引用时，记录 `centralized_refs / schema_preferred`；只允许一种形式时采用该形式。Schema 同时允许多种结构但没有提供选择依据时，不凭经验猜测，把契约歧义作为阻断问题。
+2. 已有草稿的所有业务对象地点都是完整、合法的内嵌对象，且当前 Schema 允许内嵌时，可以保留并记录 `inline_objects / existing_valid_payload`，不因新建默认偏好而改写。
+3. 已有草稿的所有业务对象地点都是合法字符串引用，集中地点集合也完整时，可以保留并记录 `centralized_refs / existing_valid_payload`。
+4. 同一草稿同时出现字符串地点引用和内嵌地点对象时视为混合结构。当前 Schema 支持集中模式时，在展示创建摘要前转为 `centralized_refs / schema_preferred`：保留已有集中 POI 和来源 ID，把内嵌地点登记到同一集合，只对确实缺失且 Schema 要求 ID 的地点生成一次稳定 ID，再用该 ID 替换内嵌值。不得按名称自动合并地点；同一 ID 对应冲突对象或无法无损转换时阻断。转换必须增加草稿 revision、清空旧确认并重新校验。
+
+对当前 revision 执行与模式对应的地点检查：
+
+- **集中引用模式**：集中地点集合必须存在且非空；每个 POI ID 都非空且在集合内唯一；所有业务对象地点都存在且是字符串 ID，不含 `null`、空字符串、空对象或内嵌地点；令 `referenceIds` 为全部字符串地点引用、`poiIds` 为集中地点 ID，必须满足 `referenceIds ⊆ poiIds`；每个被引用 POI 都包含 Schema 要求的完整坐标。
+- **内嵌对象模式**：任何业务对象地点都不得是字符串引用；每个地点都存在且是符合 Schema 的完整对象，不能是 `null`、空字符串、空数组或空对象；集中地点集合可以省略，不能因其可选而判定失败。
+- **坐标检查**：所需坐标分量必须存在且为有限数值，并满足 Schema 声明的范围；Schema 将分量定义为经纬度时，经度必须在 `[-180, 180]`、纬度必须在 `[-90, 90]`。不得以 `(0,0)`、随机值或仅有地址文本的对象代替尚未确认的坐标。
+- **校验绑定**：检查完成后把 `checked_revision` 设为当前 revision；没有任何地点阻断问题时设为 `passed`，否则设为 `failed`。任一创建字段变化都将状态重置为 `pending`；只有 `status=passed` 且 `checked_revision` 等于当前草稿 revision 时，才能进入创建确认。
+
+地点校验失败时只列出需要补齐或修正的业务地点，不展示创建确认，也不调用 `gateway.solver_jobs.create`。任何地点、ID、引用或坐标修复都形成新 revision，重新执行检查、摘要和人工确认；禁止修复后自动重提任务。该检查是 Skill 的客户端门禁，不替代 Gateway Schema 校验，也不是引擎语义校验的服务端保证。
+
+若 Schema 同时定义网点引用和独立起点字段，网点引用不自动替代起点；仅当用户事实明确两者为同一地点时，才复用同一已解析 POI。
 
 ## 网点、仓库和站点
 
@@ -182,6 +204,7 @@ Skill 求解默认开启路线绘制，不单独询问技术开关。在创建�
 - 时间格式、时区、距离、重量、体积等单位；
 - 业务对象 ID 唯一性和对象间引用关系；
 - 每个用户已提供或 Schema 要求的地点都已写回对应业务对象，不存在仅已解析但未绑定的 POI；
+- 当前地点编码模式没有混合字符串引用与内嵌对象，集中模式满足 `referenceIds ⊆ poiIds`、POI ID 唯一及被引用 POI 坐标有效，内嵌模式不存在字符串地点引用且每个地点对象完整；
 - 实际使用的网点均有完整且已确认的位置，且不存在悬空网点引用或空位置占位对象；
 - 图商、求解时长和约束覆盖项是否合法。
 - 选定约束方案展开后的每个覆盖项是否开放且符合 Schema，用户个别调整是否覆盖在正确的方案基准上。
@@ -196,6 +219,7 @@ Skill 求解默认开启路线绘制，不单独询问技术开关。在创建�
 - 必填字段没有缺口；
 - 关键映射已经确认；
 - 所有实际使用的网点都有符合 Schema 的已确认位置，且所有网点引用完整；
+- 地点编码模式已确定，`location_validation.status=passed` 且 `location_validation.checked_revision` 等于当前草稿 revision；
 - 图商按显式要求或地区默认确定且受当前版本支持，求解时长已经确认；实际图商将纳入最终创建摘要，不单独要求确认；
 - 约束方案推荐已经说明并写入当前草稿摘要；有多个公开方案时，当前选择将在统一的创建确认中由用户确认；
 - 明显非法值已经修正；

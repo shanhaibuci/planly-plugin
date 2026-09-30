@@ -11,6 +11,9 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins/planly"
 SKILL = PLUGIN / "skills/planly-solver"
+PARAMETERS = SKILL / "references/parameter-building.md"
+WORKFLOW = SKILL / "references/workflow-state.md"
+EXECUTION = SKILL / "references/job-execution.md"
 
 
 class PluginPackageTest(unittest.TestCase):
@@ -18,6 +21,7 @@ class PluginPackageTest(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
+        self.assertEqual("1.3.5", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]
@@ -167,7 +171,7 @@ class PluginPackageTest(unittest.TestCase):
         self.assertIn("不视为 Agent 已获得的分析证据", explanation)
 
     def test_parameter_guidance_distinguishes_omitted_null_and_empty_without_inference(self):
-        parameters = (SKILL / "references/parameter-building.md").read_text()
+        parameters = PARAMETERS.read_text()
         for marker in (
             "字段省略、显式 `null` 和空数组", "`required`", "`minItems`", "示例不",
             "隐含必填", "保留用户已有指派及顺序", "不假设引擎会自动补齐",
@@ -175,6 +179,74 @@ class PluginPackageTest(unittest.TestCase):
         ):
             self.assertIn(marker, parameters)
         self.assertNotIn("agents[].tickets", parameters)
+
+    def test_location_encoding_contract_is_explicit_and_uses_live_schema(self):
+        skill = (SKILL / "SKILL.md").read_text()
+        parameters = PARAMETERS.read_text()
+        workflow = WORKFLOW.read_text()
+        execution = EXECUTION.read_text()
+
+        self.assertRegex(
+            workflow,
+            r"location_encoding:\n"
+            r"  mode: null # centralized_refs \| inline_objects\n"
+            r"  source: null # schema_preferred \| existing_valid_payload\n"
+            r"location_validation:\n"
+            r"  checked_revision: null\n"
+            r"  status: pending # pending \| passed \| failed",
+        )
+        self.assertLess(
+            parameters.index("读取并解析当前 ImageVersion 的 `request_schema`"),
+            parameters.index("location_encoding:"),
+        )
+        for text in (skill, parameters, workflow):
+            self.assertRegex(text, r"不(?:得)?按镜像名称")
+        for forbidden in ("x-force/vrp-0", "1.1.1-alpha-SNAPSHOT"):
+            self.assertNotIn(forbidden, parameters + workflow + execution)
+
+        for marker in (
+            "centralized_refs / schema_preferred",
+            "inline_objects / existing_valid_payload",
+            "集中地点集合必须存在且非空",
+            "每个 POI ID 都非空且在集合内唯一",
+            "referenceIds ⊆ poiIds",
+            "每个被引用 POI 都包含 Schema 要求的完整坐标",
+            "任何业务对象地点都不得是字符串引用",
+            "集中地点集合可以省略",
+            "经度必须在 `[-180, 180]`、纬度必须在 `[-90, 90]`",
+            "同时出现字符串地点引用和内嵌地点对象",
+            "转换必须增加草稿 revision",
+        ):
+            self.assertIn(marker, parameters)
+
+    def test_location_validation_blocks_confirmation_and_create_until_current_revision_passes(self):
+        skill = (SKILL / "SKILL.md").read_text()
+        parameters = PARAMETERS.read_text()
+        workflow = WORKFLOW.read_text()
+        execution = EXECUTION.read_text()
+
+        self.assertIn("location_validation.status == passed", workflow)
+        self.assertIn("location_validation.checked_revision == draft.revision", workflow)
+        self.assertIn("重置为 `pending`", workflow)
+        self.assertIn("即使地点字段未变，也必须对新 revision 重新执行地点检查", workflow)
+        self.assertIn("不查询积分、不展示确认问题", execution)
+        self.assertIn("任一条件不成立都不得调用", execution)
+        self.assertIn("不得自动重提收费任务", execution)
+        self.assertIn("不展示创建确认，也不调用 `gateway.solver_jobs.create`", parameters)
+        self.assertIn("任何地点、ID、引用或坐标修复都形成新 revision", parameters)
+        self.assertIn("当前 revision 的地点校验未通过时，不得进入创建确认", skill)
+
+        self.assertLess(
+            execution.index("location_validation.status=passed"),
+            execution.index("是否按以上参数创建求解任务"),
+        )
+        self.assertLess(
+            execution.index("调用 `gateway.solver_jobs.create` 前再次确认"),
+            execution.index("调用时只传当前草稿中的合法字段"),
+        )
+        self.assertIn("客户端门禁", parameters)
+        self.assertIn("不替代 Gateway Schema 校验", parameters)
+        self.assertIn("不是引擎语义校验的服务端保证", parameters)
 
     def test_readme_discloses_host_scope_and_real_ui_acceptance(self):
         readme = (ROOT / "README.md").read_text()
