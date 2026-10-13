@@ -27,7 +27,7 @@ ui:
   gantt_display_tool_name: null
   display_job_id: null
   render_status: unverified
-intent: connect | create | integrate | query | explain
+intent: connect | create | integrate | query | explain | change | display
 phase: access | analyze | build | confirm | submit | monitor | explain
 scenario:
   objects: []
@@ -78,6 +78,14 @@ confirmation:
 job:
   job_id: null
   status: null
+job_contexts: {} # 按 job_id 绑定已确认输入来源及 revision；不读取历史 payload
+change_request:
+  baseline_job_id: null
+  resource_id: null
+  date: null
+  protected_assignments: []
+  adjustable_ticket_ids: []
+  open_questions: []
 evidence:
   facts: []
   inferences: []
@@ -114,6 +122,8 @@ evidence:
 - 只有未决必填问题已解决、关键映射已确认、明显非法值已清除，并且 `location_validation.status == passed` 与 `location_validation.checked_revision == draft.revision` 同时成立时，才能展示创建摘要并进入确认阶段。
 - 只有上述地点校验门仍成立且 `confirmation.confirmed_revision == draft.revision` 时才能调用创建 tool。
 - `job.job_id` 只记录 Gateway 明确返回或近期任务查询能够确认的任务标识。
+- 创建 tool 明确返回后，把该 `job_id` 与本次已确认的输入 revision、场景事实和调整边界绑定到 `job_contexts`；输入证据仅来自会话已确认草稿或用户明确提供并确认属于该任务的资料。只读查询不能把当前草稿自动绑定为历史任务输入，缺失时记为不可用而非由结果猜测还原。
+- `change_request.baseline_job_id` 指向用户正在讨论且有权限访问的基线任务。变更新任务创建后保留基线和新任务的关系，不能覆盖掉逐单对比所需的基线输入及结果证据；这些仅是当前会话上下文，不是 Gateway 保存的原始请求。
 - `ui.map_display_tool_name` / `ui.gantt_display_tool_name` 只来自该任务的 Gateway 展示提示，并分别与当前可信工具目录核对；换任务、换连接、错误版本、权限失效或目录刷新后重新发现，不复用旧映射，也不从其中一个名称推导另一个。
 - `ui.host_support` 只有宿主明确完成 MCP Apps 协商才记 supported；没有图形宿主实际证据时 `render_status` 仍为 unverified。只读工具调用成功不证明 HTML 已渲染或地图已联网。无 UI 时按 [展示参考](mcp-apps-ui.md) 降级，不调用写工具修复展示。
 
@@ -146,6 +156,15 @@ evidence:
 - 业务对象、资源、规则或目标需要改变时，回到场景分析。
 - 仅 Schema 字段、数据映射、时长、图商或合法覆盖项需要改变时，回到参数构建。
 - 不在结果解释阶段直接修改旧任务或自动创建对照任务。
+
+### 业务变更：某人某日请假
+
+1. 定位基线任务及其已确认输入来源。按业务名称解析对应资源 ID 和用户指定的日期；姓名重复、日期缺失或存在多份候选方案时，只澄清无法唯一识别的部分，不猜测。
+2. 继承该基线已确认的 ImageVersion、图商、业务规则、目标、合法覆盖项，以及预约冻结和可调整范围。人员请假不构成改变目标或重新选择约束方案的理由，也不要求用户重复已知规则。不得把“尚未开始”自行解释为可以重排，或一律冻结所有结果工单。
+3. 根据当前实时 Schema 表达该资源在指定日期不可用，只改变用户明确提出的事项。原已确认预约与请假冲突、冻结范围未确认或当前能力不能表达时，补问决定方案的必要问题；不能擅自取消预约、扩大可调整范围或假设某个固定字段会自动锁定服务时间。
+4. 结合原输入与最新结果准备新草稿。必须保护的工单保留已确认人员和服务开始 / 结束；允许调整的预排按已确认边界处理。不在历史输入缺失时由结果重建并宣称还原了原始参数，不直接沿用与基线不对应的旧重排文件。
+5. 新草稿增加 revision、清空旧确认，并重新进行 Schema、地点、引用和业务边界检查。再查询积分、展示变更范围与预计消耗，取得本次明确创建确认后才提交新任务；“帮我重新规划”不替代该创建门。仍保留基线任务，不修改或删除它。
+6. 成功后按相同业务 ID 对比，分别核对请假人员转出的工单、其他工单的连带换人、服务时间变化和保留项；对缺失字段明确无法核对。参见 [结果解释](result-explanation.md)。
 
 ## 快捷路线
 

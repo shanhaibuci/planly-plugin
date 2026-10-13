@@ -2,7 +2,7 @@
 name: planly-solver
 description: Use Planly Gateway to configure solver access, turn routing, dispatch, scheduling, or resource-planning requirements into a validated solve request, submit and track the job, explain the result, and generate local data-integration tools. Use for Planly planning scenarios and existing solver jobs; do not use for implementing solver algorithms.
 metadata:
-  version: "1.3.5"
+  version: "1.3.6"
 ---
 
 # Planly Solver
@@ -20,6 +20,7 @@ metadata:
 - 不保存或声称 Gateway 保存了 `request_payload` 原文。只在当前会话或用户明确指定的本地文件中维护草稿。
 - 不实现模型、算法或求解器工程，不自动组合实验、调参或反事实任务。求解能力由选定 ImageVersion 对应的引擎实现。
 - 不直接调用规划引擎；所有求解任务必须通过 Gateway 创建。
+- 解释遵守问题范围守恒和目标守恒：先回答当前业务疑问，按任务绑定的证据核对，不擅称正常拆分为故障、不私设目标优先级、不生成无依据的认错叙事。没有决策轨迹或对照结果不冒充唯一归因或全局最优；真实异常必须如实报告。
 
 ## 使用时自动配置 Gateway MCP
 
@@ -41,6 +42,7 @@ metadata:
 3. **日常数据接入**：先完成场景分析和参数映射，再读取 [日常数据接入](references/data-integration.md) 在用户工程生成转换工具。
 4. **已有任务查询**：取得 `job_id` 后直接读取 [任务执行](references/job-execution.md) 查询；成功任务再进入结果解释。
 5. **已有结果解释**：先验证任务访问和状态，再读取 [结果解释](references/result-explanation.md)。
+6. **已有方案变更**：读取 [工作流状态](references/workflow-state.md) 的业务变更规则，定位基线任务并继承已确认的规则、目标和调整边界；只澄清缺失或冲突，再进入参数构建及新任务确认。地图 / Gantt 按钮产生的是只读展示意图，不是变更或创建授权。
 
 Gateway tools 不可用或只读调用认证失败时，停止其他路线并切换到接入检查与修复。
 
@@ -54,6 +56,7 @@ Gateway tools 不可用或只读调用认证失败时，停止其他路线并切
 - 地点编码模式及其校验结果必须来自实时 Schema 和当前草稿，不按镜像名称推断；任一草稿 revision 变化都使地点校验失效。
 - 只有地点校验已通过且绑定当前草稿 revision，并且当前草稿 revision 与用户确认 revision 一致时，才能创建任务。
 - 创建成功后保留 `job_id`；调用结果不明确时不得自动重复创建。
+- 创建成功时把任务与本次已确认输入绑定；变更时保留基线和新任务对应关系，不用当前草稿冒充其他历史任务输入。
 
 ## 新建场景求解主流程
 
@@ -76,6 +79,10 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 ### 4. 求解结果分析
 
 只有任务成功终态才读取结果摘要、摘要 Schema 和结果入口。读取 [结果解释](references/result-explanation.md)，默认按整体可行性、派单成功与未派数量、公开未派原因、总里程、总时间、非零吨公里费用、工程师派单顺序和详情入口展示。结合得分摘要判断和解释，但默认不展示原始 hard/soft score。把结论分为可确认事实、合理推断和证据不足；不得伪装成引擎真实决策链。
+
+用户问具体问题时，优先一句结论加必要业务证据，不重复通用概览或机械追加免责与优化建议。已有工单是否计入须核对该任务已确认输入和结果，展示已有 / 新派 / 全天合计；单量相同不能证明输入正确。同址数量超过单人硬上限只证明不能全部同人，不证明实际分给多少人最优。
+
+变更结果问答须先读取 [结果解释](references/result-explanation.md)，即使用户已提供全部数据文件也不能跳过。按同一业务 ID 分别比较人员、实际 `sequence` / Schema 定义的顺序及语义已核实的时间，不因插入新单或时间后移猜测其他单顺序改变。未从当前结果摘要 Schema 确认实际服务起止时，只报告已核对的人员、预约窗口、到达 / 离开等具体项及服务起止未能核对，不能笼统称原预约或原工单完全未变；重排优先说明实际变化和保留项，不只重列全部工单。
 
 用户查看任务、地图、Gantt 或工程师路线时，按 [MCP Apps 展示](references/mcp-apps-ui.md) 使用已授权只读 UI。成功结果先用模型可见安全数据回答详情；需要可视化时按意图选择 Gateway 返回的 `map_display_tool_name` 或 `gantt_display_tool_name`，不拼版本工具名。地图下方 Gantt 入口产生新会话意图后，在下一条消息调用最新发现的 Gantt 工具。无 UI 时保留摘要和网页入口，不声称已显示。
 

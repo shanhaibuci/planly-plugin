@@ -21,7 +21,7 @@ class PluginPackageTest(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual("1.3.5", version)
+        self.assertEqual("1.3.6", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]
@@ -37,7 +37,7 @@ class PluginPackageTest(unittest.TestCase):
     def test_installation_instructions_use_current_release(self):
         version = (ROOT / "VERSION").read_text().strip()
         readme = (ROOT / "README.md").read_text()
-        self.assertIn(f"| Plugin / Skill 版本 | **{version}** |", readme)
+        self.assertIn(f"| Plugin / Skill 版本 | **{version}**", readme)
         self.assertEqual([f"v{version}"], re.findall(r"--ref (\S+)", readme))
         self.assertIn(f"## {version} 变更", readme)
         release = ROOT / "docs/releases" / f"v{version}.md"
@@ -169,6 +169,94 @@ class PluginPackageTest(unittest.TestCase):
         self.assertIn("gateway.solver_jobs.get_summary", explanation)
         self.assertIn("_meta.gateway_ui.engine_view", explanation)
         self.assertIn("不视为 Agent 已获得的分析证据", explanation)
+
+    def test_result_answers_stay_on_question_and_do_not_invent_objectives_or_apologies(self):
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        for marker in (
+            "问题范围守恒与目标守恒", "不转而批评同址拆分", "不自行制定目标",
+            "不生成“我之前遗漏了”等认错叙事", "不机械追加“不能证明最合理”",
+            "不能擅自改成“同址集中优先于均衡”等优先级",
+        ):
+            self.assertIn(marker, explanation)
+
+    def test_existing_workload_requires_input_result_binding_and_not_equal_totals(self):
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        workflow = WORKFLOW.read_text()
+        for marker in (
+            "明确绑定该任务", "已有、新派和全天合计", "按业务 ID 对照公开结果",
+            "单量相同或安排可行，都不能单独证明已有工单已传入",
+            "输入中有而结果缺失时如实报告", "单量核对不能证明旧单时间未变",
+        ):
+            self.assertIn(marker, explanation)
+        self.assertIn("job_contexts:", workflow)
+        self.assertIn("当前草稿自动绑定为历史任务输入", workflow)
+
+    def test_same_location_cap_is_not_a_proof_of_actual_split_or_optimality(self):
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        for marker in (
+            "是否必须拆分", "为何选中当前人数 / 分法",
+            "必须拆分", "不证明当前分给多少人最优或最少",
+            "不要把“至少需要拆分”改成“必须按当前分法拆分”",
+            "不是归因证据", "不承诺软关联强制同人",
+        ):
+            self.assertIn(marker, explanation)
+
+    def test_comparing_workers_requires_both_schedules_and_no_automatic_paid_counterfactual(self):
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        for marker in (
+            "先核对两人接此单时段的前后位置", "不自行换比较对象",
+            "不只比较日初出发点", "没有决策轨迹不等于没有可解释证据",
+            "不用笼统“证据不足”替代已有相关安排的比较",
+            "服务起止仍遵守时间字段语义规则",
+            "不使用局部换单后的假设负载或绕路作为决定性证据",
+            "不为普通解释自动收费求解",
+        ):
+            self.assertIn(marker, explanation)
+
+    def test_absence_inherits_confirmed_scope_but_preserves_create_gates_and_diff(self):
+        skill = (SKILL / "SKILL.md").read_text()
+        workflow = WORKFLOW.read_text()
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        parameters = PARAMETERS.read_text()
+        for marker in (
+            "业务变更：某人某日请假", "也不要求用户重复已知规则",
+            "不构成改变目标或重新选择约束方案的理由",
+            "不得把“尚未开始”自行解释为可以重排",
+            "取得本次明确创建确认后才提交新任务",
+            "仍保留基线任务，不修改或删除它",
+        ):
+            self.assertIn(marker, workflow)
+        self.assertIn("继承不免除实时 Schema", parameters)
+        self.assertIn("其他工单的连带换人", explanation)
+        self.assertIn("核实服务开始和结束的语义后比较变化", explanation)
+        self.assertIn("变更结果问答须先读取 [结果解释](references/result-explanation.md)", skill)
+        self.assertIn("即使用户已提供全部数据文件也不能跳过", skill)
+        self.assertIn("人员、顺序与时间分别比较", explanation)
+        self.assertIn("顺序依据实际 `sequence` 或摘要 Schema 定义的有序列表", explanation)
+        self.assertIn("不因插入新单或时间后移推断其他工单顺序改变", explanation)
+        self.assertIn("字段缺失时不猜测", explanation)
+
+    def test_service_time_requires_schema_semantics_not_departure_minus_duration(self):
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        for marker in (
+            "### 时间字段语义", "语义、单位和时区",
+            "`arrival_time` / `departure_time` 不因字段名而自动等于服务开始 / 结束",
+            "不得仅凭 `duration` 自行用离开减时长推定服务开始",
+            "不能将推算值冒充直接返回值", "服务开始和结束未能核对",
+            "不能把计划要求当成结果证明", "冻结要求不等于结果已保持",
+            "窗口相同不能证明服务起止相同",
+            "不能笼统称“原预约未变”或“原工单完全未变”",
+        ):
+            self.assertIn(marker, explanation)
+
+    def test_display_buttons_are_readonly_and_real_anomalies_cannot_be_hidden(self):
+        ui = (SKILL / "references/mcp-apps-ui.md").read_text()
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        self.assertIn("不要求用户再输入展示提示词", ui)
+        self.assertIn("不要查询积分、准备变更草稿或创建新任务来完成展示", ui)
+        self.assertIn("简短不等于隐瞒异常", explanation)
+        self.assertIn("地图线路与排程时间不一致", explanation)
+        self.assertIn("不能声称 Skill 修改修复了引擎时间差", explanation)
 
     def test_parameter_guidance_distinguishes_omitted_null_and_empty_without_inference(self):
         parameters = PARAMETERS.read_text()

@@ -8,18 +8,18 @@ Planly 场景求解插件：Skill + 插件自带 Gateway MCP + 宿主 OAuth；�
 | Skill 标识 | `planly-solver` |
 | 插件内 MCP 名 | `planly`（业务工具仍为 `gateway.*`） |
 | 展示名称 | Planly 场景求解 |
-| Plugin / Skill 版本 | **1.3.5** |
+| Plugin / Skill 版本 | **1.3.6**（本地待发布） |
 
-**v1.3.5：实时 Schema 驱动的地点编码与 revision 门禁。** 新草稿按当前 ImageVersion Schema 的明确偏好选择集中引用，已有合法内嵌草稿可保持内嵌，混合结构在确认前规范化；地点模式、ID、引用和坐标检查必须绑定当前草稿 revision，通过后才可确认和创建。变更及升级说明见 [发布说明](docs/releases/v1.3.5.md)。这是 Skill 客户端防错，不是 Gateway 或引擎运行时的服务端语义兜底；保留既有地图 / Gantt 双工具契约和 OAuth 离线续期配置。自动化检查与真实客户端验收分别记录在 [验收清单](docs/acceptance.md)。
+**v1.3.6：按当前问题解释结果，继承已确认的变更边界。** 核对已有 / 新派 / 全天单量，区分同址工单必须拆分与实际人数是否最优，不擅改目标、不制造认错叙事；请假继承原方案已确认规则，地图 / Gantt 按钮仅触发只读展示。真实异常仍必须披露。见 [本地待发布说明](docs/releases/v1.3.6.md) 和 [验收清单](docs/acceptance.md)。本轮不改 Gateway / 引擎业务行为、OAuth 或品牌，不创建 tag、不发布，也不表示已更新用户安装。
 
 **保留的续期修复：** 服务器级 OAuth scopes 固定为 `gateway:mcp` 与 `offline_access`。前者是唯一 Gateway 业务权限，后者只请求 OAuth 离线续期，不授予资料、组织或管理权限。v1.3.1 及更早版本即使服务端允许 refresh token，也会因未请求 `offline_access` 而只拿到 access token；客户端不会自动获得本次包更新。详见 [scope 规范与验证边界](docs/oauth-scopes.md)。
 
 ## 安装与使用
 
-使用 `v1.3.5` tag 安装；不要用旧 tag 验证本轮 Skill 门禁：
+当前 `1.3.6` 为本地待发布版本，尚无新 tag。验证本轮行为请在独立测试客户端按本仓库目录安装；不要修改用户现有配置。以下命令仅在未来明确发布 `v1.3.6` 后使用，当前不能据此取得本轮改动：
 
 ```bash
-codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.5
+codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.6
 ```
 
 在支持 Plugins Directory 的桌面客户端找到 **Planly 场景求解**并安装，启用插件内 `planly` MCP，在宿主 Authenticate 入口完成 OAuth，然后开启新会话：
@@ -69,9 +69,11 @@ Skill 从 Gateway 的任务展示提示分别获取 `map_display_tool_name`、`g
 
 上述双工具 / 双资源为已冻结的接入契约，不代表 Gateway、引擎或真实宿主已完成迁移。提示缺失或目录未就绪时降级为摘要和网页入口，不回退旧单工具契约，也不把只读调用成功当作 UI 已渲染。
 
-2026-09-29 已从 Gateway 实现逐字节同步公开 Skill；发布版本为 `1.3.5`，新 tag `v1.3.5` 指向本次发布提交。范围和未验收边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；创建 tag 不表示已更新用户安装或部署上游服务。
+2026-10-13 已从 Gateway 当前工作区逐字节同步公开 Skill；本地版本为 `1.3.6`，未创建或推送新 tag。范围和未验收边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；本地同步不表示已更新用户安装或部署上游服务。
 
 ## 本地验证
+
+包内自动化检查与真实客户端验收分别记录在 [验收清单](docs/acceptance.md)，不能互相替代。
 
 ```bash
 python3 scripts/build_mcp_config.py --check
@@ -81,6 +83,15 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 公开配置更新后执行 `python3 scripts/build_mcp_config.py`。自动化测试使用临时目录和模拟数据，不连接真实账号、不创建任务、不写用户 Codex 配置。真实宿主 OAuth、MCP Apps、地图网络与展示效果按验收清单独立记录。
 
 设置 `PLANLY_CODEX_BIN` 可额外运行真实 Codex 二进制的隔离协议测试，详见验收清单；默认不自动安装客户端。原生 MCP/OAuth 请求与资源读取通过仍不代表实际桌面 UI 已渲染。
+
+## 1.3.6 变更
+
+- 结果解释直接回答当前业务疑问，核对与任务明确绑定的已确认输入和模型可见结果；已有 / 新派 / 全天合计按工单 ID 对照，不能凭均匀结果证明输入正确。
+- 不将正常同址拆分称为故障，不擅设“同址优先于均衡”，不生成无依据认错；超单人硬上限只证明不能全部同人，不证明当前人数最优。
+- 比较“为什么派给甲而不是乙”时核对实际候选和双方相关安排；没有轨迹或对照不宣称唯一归因或全局最优，不自动创建收费对照任务。
+- 某人某日请假时继承基线已确认规则、目标和冻结 / 可调整范围，只澄清缺失或冲突；新草稿仍走 Schema / 地点校验、积分提示和创建确认。
+- 重排摘要说明请假人员工单去向、其他连带换人、服务时间变化和逐项核对的保留项，不只重列全部编号。地图 / Gantt 按钮只读，不查询积分或触发重新求解。
+- Skill 规范不能掩盖漏单、超上限、预约变化、地图与排程时间不一致，也不修复引擎。仅同步本地包、文档和测试；未发布或更新客户端。
 
 ## 1.3.5 变更
 
