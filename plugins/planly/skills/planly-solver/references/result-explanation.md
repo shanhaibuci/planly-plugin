@@ -7,10 +7,10 @@
 1. `gateway.solver_jobs.get_detail` 返回的任务状态、失败信息和公开约束摘要；该 MCP 工具是基础详情投影，不返回 `result_summary`、`engine_view` 或 `pending_engine_view`；
 2. `gateway.solver_jobs.get_summary` 返回的 `result_score` 与 `result_summary`；
 3. `gateway.image_versions.get_result_summary_schema` 对摘要字段的定义；
-4. 明确绑定该任务的当前会话已确认输入草稿；
+4. 明确绑定该任务的当前会话已确认输入草稿，或 `gateway.solver_jobs.get_scenario` 返回且已核对来源任务 ID 的求解前场景；
 5. 用户额外提供并确认所属任务的脱敏业务信息。
 
-不要调用管理员接口、场景回放接口或完整结果下载。历史任务的初始 `request_payload` 不在 MCP 能力中；当前草稿不能自动充当历史输入。缺少输入时可以确认结果中的数量与归属，但不能猜测哪些是已有单或宣称已验证原安排保留。
+不要调用管理员接口、直接 REST 场景回放、引擎／归档接口或完整结果下载。核对已有工作量或原安排需要历史输入时，可以按该任务 ID 调用 `gateway.solver_jobs.get_scenario` 获取 Gateway 派生场景；不把当前草稿或另一任务输入冒充历史输入。工具缺失、无权限或读取失败时，可以确认结果中的数量与归属，但不能猜测哪些是已有单或宣称已验证原安排保留。
 
 地图、Gantt、工程师路线和规划回放按 [MCP Apps 只读展示](mcp-apps-ui.md) 使用 Gateway 授权工具。只读规划回放不同于直接调用引擎/归档接口；不要为展示访问上述禁止接口。UI 专用数据不一定进入模型上下文，页面有图不代表 Agent 已获得全部分析证据。无 UI 时保留摘要和网页入口。
 

@@ -2,7 +2,7 @@
 name: planly-solver
 description: Use Planly Gateway to configure solver access, turn routing, dispatch, scheduling, or resource-planning requirements into a validated solve request, submit and track the job, explain the result, and generate local data-integration tools. Use for Planly planning scenarios and existing solver jobs; do not use for implementing solver algorithms.
 metadata:
-  version: "1.3.6"
+  version: "1.3.7"
 ---
 
 # Planly Solver
@@ -42,7 +42,8 @@ metadata:
 3. **日常数据接入**：先完成场景分析和参数映射，再读取 [日常数据接入](references/data-integration.md) 在用户工程生成转换工具。
 4. **已有任务查询**：取得 `job_id` 后直接读取 [任务执行](references/job-execution.md) 查询；成功任务再进入结果解释。
 5. **已有结果解释**：先验证任务访问和状态，再读取 [结果解释](references/result-explanation.md)。
-6. **已有方案变更**：读取 [工作流状态](references/workflow-state.md) 的业务变更规则，定位基线任务并继承已确认的规则、目标和调整边界；只澄清缺失或冲突，再进入参数构建及新任务确认。地图 / Gantt 按钮产生的是只读展示意图，不是变更或创建授权。
+6. **历史场景读取／复用**：用户提供任务 ID 或专有配置明确绑定来源任务时，使用 `gateway.solver_jobs.get_scenario` 只传 `job_id`，核对返回来源后读取求解前输入。具体边界见[参数构建](references/parameter-building.md)的历史场景章节。只读获取不等于创建授权。
+7. **已有方案变更**：读取 [工作流状态](references/workflow-state.md) 的业务变更规则，定位基线任务并继承已确认的规则、目标和调整边界；只澄清缺失或冲突，再进入参数构建及新任务确认。地图 / Gantt 按钮产生的是只读展示意图，不是变更或创建授权。
 
 Gateway tools 不可用或只读调用认证失败时，停止其他路线并切换到接入检查与修复。
 
@@ -102,6 +103,7 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 - `gateway.solver_jobs.list`
 - `gateway.solver_jobs.get_detail`
 - `gateway.solver_jobs.get_summary`
+- `gateway.solver_jobs.get_scenario`
 - `gateway.solver_jobs.get_result_access`
 
 额外允许当前可信 Gateway 目录中的只读 UI tools：`gateway.ui.show_choices`，以及 Gateway 按任务返回的地图 / Gantt 版本化结果工具。必须与当前目录交叉核对：地图只传 schema 允许的 `job_id` 和可选 `engineer_id`，Gantt 只传 `job_id`；不传 `view`，不自行拼接 `gateway.ui.map_result_...` 或 `gateway.ui.gantt_result_...`。选择卡只传意图，不等于创建授权，创建确认门不变。工具禁用、版本不匹配或权限失效时停止并按展示参考降级，不探测其他版本或账号。

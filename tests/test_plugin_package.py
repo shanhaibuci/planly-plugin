@@ -21,7 +21,7 @@ class PluginPackageTest(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual("1.3.6", version)
+        self.assertEqual("1.3.7", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]

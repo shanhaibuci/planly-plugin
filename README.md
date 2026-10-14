@@ -8,18 +8,18 @@ Planly 场景求解插件：Skill + 插件自带 Gateway MCP + 宿主 OAuth；�
 | Skill 标识 | `planly-solver` |
 | 插件内 MCP 名 | `planly`（业务工具仍为 `gateway.*`） |
 | 展示名称 | Planly 场景求解 |
-| Plugin / Skill 版本 | **1.3.6**（发布标签 `v1.3.6`） |
+| Plugin / Skill 版本 | **1.3.7**（发布标签 `v1.3.7`） |
 
-**v1.3.6：按当前问题解释结果，继承已确认的变更边界。** 核对已有 / 新派 / 全天单量，区分同址工单必须拆分与实际人数是否最优，不擅改目标、不制造认错叙事；请假继承原方案已确认规则，地图 / Gantt 按钮仅触发只读展示。真实异常仍必须披露。见 [发布说明](docs/releases/v1.3.6.md) 和 [验收清单](docs/acceptance.md)。本版通过新标签 `v1.3.6` 发布，不移动既有 tag；不改 Gateway / 引擎业务行为、OAuth 或品牌，也不表示已部署上游服务或更新用户安装。
+**v1.3.7：按历史任务 ID 查询和复用求解场景。** Skill 新增 `gateway.solver_jobs.get_scenario` 接入，核对来源任务后读取 Gateway 派生的求解前参数，用于核对已有安排、准备重排。日期／城市映射仍由演示专有配置提供，不写入通用 Skill；读取不等于创建授权。见 [发布说明](docs/releases/v1.3.7.md) 和 [验收清单](docs/acceptance.md)。本版通过新标签 `v1.3.7` 发布，不移动既有 tag；本仓库更新不部署 Gateway 或引擎，不修改 OAuth、品牌或用户安装。
 
 **保留的续期修复：** 服务器级 OAuth scopes 固定为 `gateway:mcp` 与 `offline_access`。前者是唯一 Gateway 业务权限，后者只请求 OAuth 离线续期，不授予资料、组织或管理权限。v1.3.1 及更早版本即使服务端允许 refresh token，也会因未请求 `offline_access` 而只拿到 access token；客户端不会自动获得本次包更新。详见 [scope 规范与验证边界](docs/oauth-scopes.md)。
 
 ## 安装与使用
 
-安装发布版本 `1.3.6` 时使用标签 `v1.3.6`：
+安装发布版本 `1.3.7` 时使用标签 `v1.3.7`：
 
 ```bash
-codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.6
+codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.7
 ```
 
 在支持 Plugins Directory 的桌面客户端找到 **Planly 场景求解**并安装，启用插件内 `planly` MCP，在宿主 Authenticate 入口完成 OAuth，然后开启新会话：
@@ -69,7 +69,7 @@ Skill 从 Gateway 的任务展示提示分别获取 `map_display_tool_name`、`g
 
 上述双工具 / 双资源为已冻结的接入契约，不代表 Gateway、引擎或真实宿主已完成迁移。提示缺失或目录未就绪时降级为摘要和网页入口，不回退旧单工具契约，也不把只读调用成功当作 UI 已渲染。
 
-2026-10-13 已从 Gateway 当前工作区逐字节同步公开 Skill；发布版本为 `1.3.6`，使用标签 `v1.3.6`。范围和未验收边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；发布包不表示已更新用户安装或部署上游服务。
+2026-10-14 已从 Gateway 当前工作区逐字节同步公开 Skill；Plugin / Skill 版本为 `1.3.7`，使用标签 `v1.3.7`。范围和未验收边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；包更新不表示已更新用户安装或部署上游服务。
 
 ## 本地验证
 
@@ -83,6 +83,15 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 公开配置更新后执行 `python3 scripts/build_mcp_config.py`。自动化测试使用临时目录和模拟数据，不连接真实账号、不创建任务、不写用户 Codex 配置。真实宿主 OAuth、MCP Apps、地图网络与展示效果按验收清单独立记录。
 
 设置 `PLANLY_CODEX_BIN` 可额外运行真实 Codex 二进制的隔离协议测试，详见验收清单；默认不自动安装客户端。原生 MCP/OAuth 请求与资源读取通过仍不代表实际桌面 UI 已渲染。
+
+## 1.3.7 变更
+
+- 新增只读 `gateway.solver_jobs.get_scenario` 接入，仅传 `job_id`；工具由 Gateway 动态发布，不在 Plugin 中复制工具实现或硬编码目录。
+- 日期／城市到来源任务 ID 的映射放在演示专有配置；不猜 ID、不自动选最近任务，固定来源、本轮初排与重排分别记录。
+- 场景是 Gateway 派生的求解前输入，不是原始上传 JSON 或已求解结果。保留已有安排、图商和显式矩阵／路线选项，不把新派工单自动冻结。
+- `can_create=false` 时只读；重新求解仍须实时 Schema、地点与覆盖校验、积分提示和当前草稿确认。工具缺失或失败不绕过权限访问 REST 回放、管理员或归档接口。
+- 结果解释可用同任务的历史输入核对已有单量和安排；读取失败不猜测，不用其他任务的数据替代。保留 v1.3.6 的业务问答、异常披露与只读展示边界。
+- Plugin、Skill 和根版本统一为 `1.3.7`；公开端点、OAuth、`.mcp.json` 与品牌不变。本版通过新标签 `v1.3.7` 发布，不声明真实客户端已更新或新流程已完成端到端验收。
 
 ## 1.3.6 变更
 
