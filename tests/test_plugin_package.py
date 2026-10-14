@@ -21,7 +21,7 @@ class PluginPackageTest(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual("1.3.7", version)
+        self.assertEqual("1.3.8", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]
@@ -146,7 +146,8 @@ class PluginPackageTest(unittest.TestCase):
         ):
             self.assertIn(marker, ui)
         self.assertIn("gateway.ui.show_choices", skill)
-        self.assertIn("创建确认门不变", skill)
+        self.assertIn("Agent 仍执行原有创建校验", skill)
+        self.assertIn("普通选择不等于创建授权", skill)
         self.assertIn("不声称已显示", skill)
 
     def test_map_and_gantt_have_separate_tools_and_state(self):
@@ -204,14 +205,19 @@ class PluginPackageTest(unittest.TestCase):
     def test_comparing_workers_requires_both_schedules_and_no_automatic_paid_counterfactual(self):
         explanation = (SKILL / "references/result-explanation.md").read_text()
         for marker in (
-            "先核对两人接此单时段的前后位置", "不自行换比较对象",
-            "不只比较日初出发点", "没有决策轨迹不等于没有可解释证据",
-            "不用笼统“证据不足”替代已有相关安排的比较",
-            "服务起止仍遵守时间字段语义规则",
-            "不使用局部换单后的假设负载或绕路作为决定性证据",
-            "不为普通解释自动收费求解",
+            "核对目标工单实际归属", "用户点名的两个候选", "不只看日初出发点",
+            "涉及时间先按当前摘要 Schema 核实", "数字必须现场计算", "其他工单不动",
+            "不把这项分析说成引擎唯一选人原因", "普通解释不得自动收费",
         ):
             self.assertIn(marker, explanation)
+
+    def test_current_draft_button_confirmation_is_single_use_and_falls_back(self):
+        execution = (SKILL / "references/job-execution.md").read_text()
+        workflow = WORKFLOW.read_text()
+        for marker in ("presentation=buttons", "confirm_solve", "edit_parameters", "question_id", "consumed", "不再要求打字", "旧卡", "计费条件"):
+            self.assertIn(marker, execution)
+        self.assertIn("invalidated", workflow)
+        self.assertIn("无卡片时允许当前摘要后的明确文字确认", workflow)
 
     def test_absence_inherits_confirmed_scope_but_preserves_create_gates_and_diff(self):
         skill = (SKILL / "SKILL.md").read_text()
@@ -242,7 +248,7 @@ class PluginPackageTest(unittest.TestCase):
             "### 时间字段语义", "语义、单位和时区",
             "`arrival_time` / `departure_time` 不因字段名而自动等于服务开始 / 结束",
             "不得仅凭 `duration` 自行用离开减时长推定服务开始",
-            "不能将推算值冒充直接返回值", "服务开始和结束未能核对",
+            "不能将推算值冒充直接返回值", "具体哪些时段未能核对",
             "不能把计划要求当成结果证明", "冻结要求不等于结果已保持",
             "窗口相同不能证明服务起止相同",
             "不能笼统称“原预约未变”或“原工单完全未变”",

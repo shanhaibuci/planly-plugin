@@ -74,6 +74,12 @@ draft:
   revision: 0
   value: null
 confirmation:
+  question_id: null
+  draft_revision: null
+  connection: null
+  image_version_id: null
+  quote: null # 当前单价、时长、预计积分，不含凭据
+  status: null # pending | consumed | invalidated
   confirmed_revision: null
 job:
   job_id: null
@@ -115,7 +121,8 @@ evidence:
 - Schema 允许集中结构时，混合草稿必须先规范化并记录为 `centralized_refs / schema_preferred`：保留已有 ID，为确实缺失且 Schema 要求 ID 的地点只生成一次稳定 ID，替换内嵌地点引用。该转换属于草稿变化，必须增加 revision、清空创建确认并重新校验；无法无损转换时保持 `failed`，不得静默合并同名地点。
 - 每次检查当前草稿后，把 `location_validation.checked_revision` 设为被检查的 revision；只有地点模式、位置完整性、ID 唯一性、引用和坐标均通过时才设置 `status=passed`，否则设置 `status=failed` 并保留阻断问题。
 - 只有 `schema.composite_validation_view_ready` 为 `true` 且约束相关场景事实充分时，才能设置 `constraint_selection.recommended_preset_id` 或 `selected_preset_id`。
-- 任一创建字段变化都必须增加 `draft.revision`，把 `confirmation.confirmed_revision` 和 `location_validation.checked_revision` 清空，并把 `location_validation.status` 重置为 `pending`；即使地点字段未变，也必须对新 revision 重新执行地点检查。
+- 任一创建字段变化都必须增加 `draft.revision`，把当前确认问题置为 `invalidated`，把 `confirmation.confirmed_revision` 和 `location_validation.checked_revision` 清空，并把 `location_validation.status` 重置为 `pending`；即使地点字段未变，也必须对新 revision 重新执行地点检查。
+- 确认问题的 question_id 唯一且绑定当前草稿、可信连接、镜像及已展示费用；只允许 pending 的匹配问题及一个 confirm_solve 选项完成确认。edit_parameters、参数或计费变化使绑定失效；未知/过期问题、普通选择、地图/Gantt意图不得创建。创建尝试前消费确认，重复消息或结果未知不再次调用创建。无卡片时允许当前摘要后的明确文字确认；绑定丢失则重新展示，不能恢复已消费确认。
 - `draft.revision` 和 `confirmation.confirmed_revision` 只用于 Agent 内部绑定确认，不向业务用户展示，也不要求用户复述 revision 编号。
 - 地址解析候选不是最终事实；只有用户确认的 POI 或坐标才能进入字段映射和草稿。
 - 网点、仓库或站点位置适用同一规则；存在网点引用但没有已确认有效位置时必须保持为阻断缺口。

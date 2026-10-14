@@ -2,7 +2,7 @@
 name: planly-solver
 description: Use Planly Gateway to configure solver access, turn routing, dispatch, scheduling, or resource-planning requirements into a validated solve request, submit and track the job, explain the result, and generate local data-integration tools. Use for Planly planning scenarios and existing solver jobs; do not use for implementing solver algorithms.
 metadata:
-  version: "1.3.7"
+  version: "1.3.8"
 ---
 
 # Planly Solver
@@ -75,15 +75,15 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 
 ### 3. Gateway 求解任务执行
 
-读取 [任务执行](references/job-execution.md)。先确认地点校验状态为 `passed` 且 `checked_revision` 等于当前草稿 revision，再查询积分，按固定业务分组展示当前草稿、预计积分消耗和可计算时的预计剩余，并询问“是否按以上参数创建求解任务”。把用户确认绑定到当前内部 revision，然后调用 `gateway.solver_jobs.create`。只有明确返回 `job_id` 和状态才称为任务创建成功；只有状态为 `succeeded` 才称为求解成功。期望求解时长不超过 `PT30S` 时有限等待终态，超过 `PT30S` 时创建后立即返回；均不得紧密轮询。
+读取 [任务执行](references/job-execution.md)。先确认地点校验状态为 `passed` 且 `checked_revision` 等于当前草稿 revision，再查询积分，简洁展示当前场景、关键规则及预计积分。优先使用支持 `presentation=buttons` 的选择卡提供“确认求解”“修改参数”；不支持时以简短文字确认。按任务执行参考将唯一问题绑定当前草稿及费用，点击有效确认即完成本次用户确认，不再要求打字；修改参数或费用改变使旧确认失效。确认只消费一次，再调用 `gateway.solver_jobs.create`。不向业务用户引用 Skill 文件路径、内部条款或修订号。只有明确返回 `job_id` 和状态才称为任务创建成功；只有状态为 `succeeded` 才称为求解成功。期望求解时长不超过 `PT30S` 时有限等待终态，超过 `PT30S` 时创建后立即返回；均不得紧密轮询。
 
 ### 4. 求解结果分析
 
-只有任务成功终态才读取结果摘要、摘要 Schema 和结果入口。读取 [结果解释](references/result-explanation.md)，默认按整体可行性、派单成功与未派数量、公开未派原因、总里程、总时间、非零吨公里费用、工程师派单顺序和详情入口展示。结合得分摘要判断和解释，但默认不展示原始 hard/soft score。把结论分为可确认事实、合理推断和证据不足；不得伪装成引擎真实决策链。
+只有任务成功终态才读取结果摘要、摘要 Schema 和结果入口。读取 [结果解释](references/result-explanation.md)，默认按整体可行性、派单成功与未派数量、公开未派原因、总里程、总时间、非零吨公里费用、工程师派单顺序和详情入口展示。结合得分摘要判断和解释，但默认不展示原始 hard/soft score。内部区分事实、条件性分析与待核对项；对外主动核查后先给明确业务结论和具体依据，不伪装成引擎真实决策链，也不把证据分类当成回答模板。
 
-用户问具体问题时，优先一句结论加必要业务证据，不重复通用概览或机械追加免责与优化建议。已有工单是否计入须核对该任务已确认输入和结果，展示已有 / 新派 / 全天合计；单量相同不能证明输入正确。同址数量超过单人硬上限只证明不能全部同人，不证明实际分给多少人最优。
+用户问具体问题时，读取 [结果解释](references/result-explanation.md)，内部完成资格、负载、时序等核查，对外用“结论＋关键依据”回答实际疑问，说清即止，不预设用户有其他误解。人选比较给限定其他单不动的直接转派影响和相关地点，不把局部比较升级为求解器的实际选人原因；已有单计入给明确结论和“已有 / 新派 / 全天合计”；同址超限直接解释单量超过单人上限。默认用姓名、地址和服务类型定位，不输出工单编号、配置字段或无关尾注。真实缺口和异常依证据如实说明，时间语义仍以任务对应 Schema 为准。
 
-变更结果问答须先读取 [结果解释](references/result-explanation.md)，即使用户已提供全部数据文件也不能跳过。按同一业务 ID 分别比较人员、实际 `sequence` / Schema 定义的顺序及语义已核实的时间，不因插入新单或时间后移猜测其他单顺序改变。未从当前结果摘要 Schema 确认实际服务起止时，只报告已核对的人员、预约窗口、到达 / 离开等具体项及服务起止未能核对，不能笼统称原预约或原工单完全未变；重排优先说明实际变化和保留项，不只重列全部工单。
+变更结果问答须先读取 [结果解释](references/result-explanation.md)，即使用户已提供全部数据文件也不能跳过。按同一业务 ID 分别比较人员、实际 `sequence` / Schema 定义的顺序及语义已核实的时间，不因插入新单或时间后移猜测其他单顺序改变。未从当前结果摘要 Schema 确认实际服务起止时，只报告已核对的人员、预约窗口、到达 / 离开等具体项；仅在用户追问服务时间或预约保持时指出具体待核对项，不机械追加无关时间尾注，不能笼统称原预约或原工单完全未变；重排优先说明实际变化和保留项，不只重列全部工单。
 
 用户查看任务、地图、Gantt 或工程师路线时，按 [MCP Apps 展示](references/mcp-apps-ui.md) 使用已授权只读 UI。成功结果先用模型可见安全数据回答详情；需要可视化时按意图选择 Gateway 返回的 `map_display_tool_name` 或 `gantt_display_tool_name`，不拼版本工具名。地图下方 Gantt 入口产生新会话意图后，在下一条消息调用最新发现的 Gantt 工具。无 UI 时保留摘要和网页入口，不声称已显示。
 
@@ -106,7 +106,7 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 - `gateway.solver_jobs.get_scenario`
 - `gateway.solver_jobs.get_result_access`
 
-额外允许当前可信 Gateway 目录中的只读 UI tools：`gateway.ui.show_choices`，以及 Gateway 按任务返回的地图 / Gantt 版本化结果工具。必须与当前目录交叉核对：地图只传 schema 允许的 `job_id` 和可选 `engineer_id`，Gantt 只传 `job_id`；不传 `view`，不自行拼接 `gateway.ui.map_result_...` 或 `gateway.ui.gantt_result_...`。选择卡只传意图，不等于创建授权，创建确认门不变。工具禁用、版本不匹配或权限失效时停止并按展示参考降级，不探测其他版本或账号。
+额外允许当前可信 Gateway 目录中的只读 UI tools：`gateway.ui.show_choices`，以及 Gateway 按任务返回的地图 / Gantt 版本化结果工具。必须与当前目录交叉核对：地图只传 schema 允许的 `job_id` 和可选 `engineer_id`，Gantt 只传 `job_id`；不传 `view`，不自行拼接 `gateway.ui.map_result_...` 或 `gateway.ui.gantt_result_...`。选择卡只传意图；普通选择不等于创建授权。仅已绑定当前草稿和费用的求解确认问题可完成明确用户确认，Agent 仍执行原有创建校验，卡片不直接创建。工具禁用、版本不匹配或权限失效时停止并按展示参考降级，不探测其他版本或账号。
 
 先用只读 tool 获取事实，再推荐、构建或解释。不要把历史经验当作当前用户的镜像、权限、Schema、积分或任务状态。生成到用户工程的日常脚本优先调用 Gateway REST API，不要求运行环境加载 Skill 或 MCP 客户端。
 

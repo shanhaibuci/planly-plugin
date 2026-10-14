@@ -2,14 +2,7 @@
 
 ## 创建前检查与确认
 
-只接受当前 ImageVersion、Schema 和参数构建阶段已经完成的草稿。展示创建摘要前，必须同时满足 `location_validation.status=passed` 和 `location_validation.checked_revision == draft.revision`；不满足时返回参数构建阶段修复或重新校验，不查询积分、不展示确认问题。门禁通过后调用 `gateway.credits.get_me`，然后使用业务语言按固定分组展示，不输出无层次的流水账：
-
-1. **求解设置**：求解能力名称、图商、期望求解时长，以及路线绘制开启、关闭或受当前能力限制；
-2. **资源与任务**：工程师、车辆等资源，以及待处理工单或其他对象的数量和关键属性；
-3. **地点与时间**：已确认地点、日期范围、工作时段、服务时长和时间要求；
-4. **规则与约束**：业务目标、不可违反规则、选定约束方案的中文名称和主要取舍，以及单独调整的罚分；没有额外调整时不展开整份分值表；
-5. **风险与待确认**：必须为空或已由用户明确接受；同类事项归类展示，不逐条堆成流水账；
-6. **积分**：当前余额、预计消耗和可计算时的预计剩余。
+只接受当前 ImageVersion、Schema 和参数构建阶段已经完成的草稿。展示创建摘要前，必须同时满足 `location_validation.status=passed` 和 `location_validation.checked_revision == draft.revision`；不满足时返回参数构建阶段修复或重新校验，不查询积分、不展示确认问题。门禁通过后调用 `gateway.credits.get_me`，以简洁业务摘要覆盖日期、城市/网点、工程师/车辆和工单数量、服务时间要求、关键规则、求解设置及预计积分。已确认且未变的规则可一句概括，不强制重复六个分组或空的风险标题；真正的新取舍或异常必须说明。展示余额与可计算的预计剩余，但不为展示重复打开积分卡。
 
 预计消耗使用当前 ImageVersion 详情中的 `base_credit_cost`、`duration_credit_per_10s` 和当前 `expected_solve_duration` 计算：
 
@@ -17,11 +10,16 @@
 base_credit_cost + ceil(求解秒数 / 10) × duration_credit_per_10s
 ```
 
-结果保留 4 位小数，并明确“预计消耗仅供创建前确认，实际冻结积分以 Gateway 创建结果返回的 credit_cost 为准”。不得硬编码单价或从其他 ImageVersion 沿用价格。历史 ImageVersion 没有公开价格时说明暂时无法预估，不自行猜测。
+计算保留 4 位小数，显示可去除尾零。用“预计消耗”表达创建前估算，创建后按 Gateway 返回的 credit_cost 报告实际冻结积分，不机械引用内部计费条款。不得硬编码单价或从其他 ImageVersion 沿用价格。历史 ImageVersion 没有公开价格时说明暂时无法预估，不自行猜测。
 
-统一询问：“是否按以上参数创建求解任务？”不向用户展示 revision、“字段映射”、原始字段路径或其他内部状态。只有用户在看到该摘要后作出明确肯定答复，才能把当前内部 revision 记为 `confirmed_revision` 并调用 `gateway.solver_jobs.create`。
+### 确认卡与文字降级
 
-此前的“可以”“继续”等回复不能跨草稿复用。任一创建字段变化后立即清空确认，把地点校验重置为 `pending`，并对新 revision 重新执行地点检查、其他辅助检查、积分查询、摘要展示和确认。地点、ID、引用或坐标修复不得沿用旧确认。
+1. 当前可信工具 Schema 支持 `gateway.ui.show_choices` 的 `presentation=buttons` 时，优先用它展示本轮摘要及“确认求解”“修改参数”：`selection_mode=single`、`min_selections=max_selections=1`，选项 ID 固定为 `confirm_solve` / `edit_parameters`。问题文本包含真实日期、城市/网点、工单/人员数和预计积分；缺失信息不补造，非派单场景使用对应业务对象。不要在正文与卡片重复提问，不引用 Skill 路径、条款、revision 或字段映射。
+2. 每次展示生成新的唯一 `question_id`，在会话 `confirmation` 中绑定当前 revision、账号/可信连接、镜像、计费单价/时长/预计消耗（`quote`），状态置为 `pending`。只记录当前有效问题，不把标识当作权限凭据。选项的 label 只是展示文案，不按 label、原始业务文字或未知问题执行工具。
+3. 用户点击后回传的 `question_id` 必须与当前有效问题一致，且恰有一个合法选项。`confirm_solve` 是本次明确肯定答复，记为 `confirmed_revision`，复核门禁后创建，不再要求打字或再点一次。`edit_parameters` 立即使确认失效，只询问要改什么，不创建；普通选择和地图/Gantt消息不授权创建。
+4. 无卡片工具、旧工具不支持 buttons、宿主明确不支持或回传被拒绝时，在同一摘要下使用自然语言，例如“本次安排…张工单，预计消耗…积分，确认开始吗？”；原“是否按以上参数创建求解任务”无需逐字复述。只有用户看到当前摘要后的明确文字肯定才能完成确认；同一会话可用文字确认代替失败卡片，不要求用户手填 JSON 或内部标识。
+5. 任一创建字段变化后立即清空确认，把地点校验重置为 `pending`，按新 revision 重新检查。账号/连接、镜像或计费条件变化同样使旧确认失效；此前“可以”“继续”和旧卡回传不能跨草稿复用。丢失绑定状态时重新展示，不猜测历史卡片指向哪个草稿。
+6. 创建前必须再次调用 `gateway.image_versions.get_detail` 和 `gateway.credits.get_me`，复核当前 ImageVersion 单价、求解时长及积分是否仍与已展示费用一致；会话报价和本地旧文件不能替代本次实时复核。计费变更重新提示和确认，余额不足停止提交。确认通过后在调用创建工具前把 `confirmation.status` 置为 `consumed`；同问题重复消息不再创建，只简短返回已知任务状态或入口，不重复整份派单概览。卡片发送中/已发送只代表用户意图状态，创建结果未知时按下一节核对任务，不自动重提。
 
 ## 创建任务
 
