@@ -21,7 +21,7 @@ class PluginPackageTest(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual("1.3.8", version)
+        self.assertEqual("1.3.9", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]
@@ -175,7 +175,9 @@ class PluginPackageTest(unittest.TestCase):
         explanation = (SKILL / "references/result-explanation.md").read_text()
         for marker in (
             "问题范围守恒与目标守恒", "不转而批评同址拆分", "不自行制定目标",
-            "不生成“我之前遗漏了”等认错叙事", "不机械追加“不能证明最合理”",
+            "没有可核对的先前错误，不生成认错叙事",
+            "未被询问且不影响结论的证明问题留在内部核查",
+            "不自动转入调参或替代方案建议",
             "不能擅自改成“同址集中优先于均衡”等优先级",
         ):
             self.assertIn(marker, explanation)
@@ -195,21 +197,39 @@ class PluginPackageTest(unittest.TestCase):
     def test_same_location_cap_is_not_a_proof_of_actual_split_or_optimality(self):
         explanation = (SKILL / "references/result-explanation.md").read_text()
         for marker in (
-            "是否必须拆分", "为何选中当前人数 / 分法",
-            "必须拆分", "不证明当前分给多少人最优或最少",
-            "不要把“至少需要拆分”改成“必须按当前分法拆分”",
-            "不是归因证据", "不承诺软关联强制同人",
+            "独立计数", "单人当日上限", "已有占用",
+            "超硬上限时直接回答不能全部同人",
+            "再结合本次目标优先级和全天指标解释当前分法",
+            "用户要求证明或比较替代方案时，如实说明证据覆盖范围",
+            "局部单移假定其他分配不变，不等于全局重新求解",
+            "无需为这一算术事实创建对照任务", "是权重 50 的软约束，不保证同人",
         ):
             self.assertIn(marker, explanation)
+        self.assertIn("结论强度与证据相称", (SKILL / "SKILL.md").read_text())
 
     def test_comparing_workers_requires_both_schedules_and_no_automatic_paid_counterfactual(self):
         explanation = (SKILL / "references/result-explanation.md").read_text()
         for marker in (
             "核对目标工单实际归属", "用户点名的两个候选", "不只看日初出发点",
             "涉及时间先按当前摘要 Schema 核实", "数字必须现场计算", "其他工单不动",
-            "不把这项分析说成引擎唯一选人原因", "普通解释不得自动收费",
+            "配置说明优化方向，不充当决策记录",
+            "局部单移假定其他分配不变，不等于全局重新求解",
+            "规则调整与对照求解须由用户决定",
+            "单项资格或当前安排的局部冲突均不足以判定替代排程整体可行性",
         ):
             self.assertIn(marker, explanation)
+        self.assertIn("不自动组合实验、调参或反事实任务", (SKILL / "SKILL.md").read_text())
+
+    def test_explanation_uses_actual_objectives_and_scores_without_inventing_components(self):
+        explanation = (SKILL / "references/result-explanation.md").read_text()
+        for marker in (
+            "本次生效的硬约束、相关目标优先级和实际指标解释取舍",
+            "得分有助于回答时可展示原值，并解释层级和业务含义",
+            "仅有总分不能反推分项贡献",
+            "不得将 soft 数值直接写成秒或分钟",
+        ):
+            self.assertIn(marker, explanation)
+        self.assertIn("得分按解释价值展示", (SKILL / "SKILL.md").read_text())
 
     def test_current_draft_button_confirmation_is_single_use_and_falls_back(self):
         execution = (SKILL / "references/job-execution.md").read_text()

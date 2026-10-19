@@ -2,7 +2,7 @@
 name: planly-solver
 description: Use Planly Gateway to configure solver access, turn routing, dispatch, scheduling, or resource-planning requirements into a validated solve request, submit and track the job, explain the result, and generate local data-integration tools. Use for Planly planning scenarios and existing solver jobs; do not use for implementing solver algorithms.
 metadata:
-  version: "1.3.8"
+  version: "1.3.9"
 ---
 
 # Planly Solver
@@ -20,7 +20,7 @@ metadata:
 - 不保存或声称 Gateway 保存了 `request_payload` 原文。只在当前会话或用户明确指定的本地文件中维护草稿。
 - 不实现模型、算法或求解器工程，不自动组合实验、调参或反事实任务。求解能力由选定 ImageVersion 对应的引擎实现。
 - 不直接调用规划引擎；所有求解任务必须通过 Gateway 创建。
-- 解释遵守问题范围守恒和目标守恒：先回答当前业务疑问，按任务绑定的证据核对，不擅称正常拆分为故障、不私设目标优先级、不生成无依据的认错叙事。没有决策轨迹或对照结果不冒充唯一归因或全局最优；真实异常必须如实报告。
+- 解释遵守问题范围守恒和目标守恒：按任务绑定证据回答当前疑问，结论强度与证据相称，不私设目标优先级、不擅称正常拆分为故障或生成无依据的认错叙事；真实异常必须如实报告。
 
 ## 使用时自动配置 Gateway MCP
 
@@ -79,9 +79,9 @@ Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定
 
 ### 4. 求解结果分析
 
-只有任务成功终态才读取结果摘要、摘要 Schema 和结果入口。读取 [结果解释](references/result-explanation.md)，默认按整体可行性、派单成功与未派数量、公开未派原因、总里程、总时间、非零吨公里费用、工程师派单顺序和详情入口展示。结合得分摘要判断和解释，但默认不展示原始 hard/soft score。内部区分事实、条件性分析与待核对项；对外主动核查后先给明确业务结论和具体依据，不伪装成引擎真实决策链，也不把证据分类当成回答模板。
+只有任务成功终态才读取结果摘要、摘要 Schema 和结果入口。按 [结果解释](references/result-explanation.md) 核查，以业务语言说清本次硬约束、相关目标优先级及结果表现，让用户理解优化取舍；得分按解释价值展示。
 
-用户问具体问题时，读取 [结果解释](references/result-explanation.md)，内部完成资格、负载、时序等核查，对外用“结论＋关键依据”回答实际疑问，说清即止，不预设用户有其他误解。人选比较给限定其他单不动的直接转派影响和相关地点，不把局部比较升级为求解器的实际选人原因；已有单计入给明确结论和“已有 / 新派 / 全天合计”；同址超限直接解释单量超过单人上限。默认用姓名、地址和服务类型定位，不输出工单编号、配置字段或无关尾注。真实缺口和异常依证据如实说明，时间语义仍以任务对应 Schema 为准。
+具体问题按需核对资格、负载、时序及候选安排，用条件准确限定结论，以业务依据收束。默认用姓名、地址和服务类型定位；具体缺口及真实异常须说明，时间和得分语义以任务对应 Schema 为准。
 
 变更结果问答须先读取 [结果解释](references/result-explanation.md)，即使用户已提供全部数据文件也不能跳过。按同一业务 ID 分别比较人员、实际 `sequence` / Schema 定义的顺序及语义已核实的时间，不因插入新单或时间后移猜测其他单顺序改变。未从当前结果摘要 Schema 确认实际服务起止时，只报告已核对的人员、预约窗口、到达 / 离开等具体项；仅在用户追问服务时间或预约保持时指出具体待核对项，不机械追加无关时间尾注，不能笼统称原预约或原工单完全未变；重排优先说明实际变化和保留项，不只重列全部工单。
 
