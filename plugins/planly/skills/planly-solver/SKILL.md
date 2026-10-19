@@ -2,7 +2,7 @@
 name: planly-solver
 description: Use Planly Gateway to configure solver access, turn routing, dispatch, scheduling, or resource-planning requirements into a validated solve request, submit and track the job, explain the result, and generate local data-integration tools. Use for Planly planning scenarios and existing solver jobs; do not use for implementing solver algorithms.
 metadata:
-  version: "1.3.9"
+  version: "1.3.10"
 ---
 
 # Planly Solver
@@ -69,9 +69,9 @@ Gateway tools 不可用或只读调用认证失败时，停止其他路线并切
 
 ### 2. 场景参数构建
 
-读取 [参数构建](references/parameter-building.md)。严格按以下顺序执行：获取当前 ImageVersion 的 `request_schema` → 与创建顶层字段及约束覆盖 Schema 组成内部校验视图 → 按 Schema 理解并收集场景参数 → 在目标、硬规则和可接受取舍足以判断后推荐约束方案及罚分。必要时通过 Gateway 把用户提供的地址解析为候选 POI 并确认，按 Schema 决定地点结构、枚举机器值和可覆盖字段，不硬编码 `plan.pois`、镜像名称、枚举语义、约束方案或 Gateway 技术默认值。当前 Schema 同时支持集中引用和内嵌地点且明确首选集中结构时，新草稿使用集中引用；已有且全部合法的内嵌草稿可以保持内嵌，混合草稿在确认前按 Schema 转为集中引用。使用网点、仓库或站点时必须按 Schema 提供已确认的有效位置并验证引用；业务不需要且 Schema 不要求时不得构造空位置的占位对象。用户询问其他方案时介绍当前 ImageVersion 返回的全部方案，允许在选定方案基础上按用户要求调整个别开放罚分。完成数据准备、内部字段映射、缺口和风险识别，生成带内部 revision 的创建草稿。必填缺口、未确认关键映射、明显非法值或当前 revision 的地点校验未通过时，不得进入创建确认。
+读取 [参数构建](references/parameter-building.md)。严格按以下顺序执行：获取当前 ImageVersion 的 `request_schema` → 与创建顶层字段及约束覆盖 Schema 组成内部校验视图 → 按 Schema 理解并收集场景参数 → 在目标、硬规则和可接受取舍足以判断后推荐约束方案及罚分。必要时通过 Gateway 把用户提供的地址解析为候选 POI 并确认，按 Schema 决定地点结构、枚举机器值和可覆盖字段，不硬编码 `plan.pois`、镜像名称、枚举语义、约束罚分，也不擅定 Gateway 默认值。当前 Schema 同时支持集中引用和内嵌地点且明确首选集中结构时，新草稿使用集中引用；已有且全部合法的内嵌草稿可以保持内嵌，混合草稿在确认前按 Schema 转为集中引用。使用网点、仓库或站点时必须按 Schema 提供已确认的有效位置并验证引用；业务不需要且 Schema 不要求时不得构造空位置的占位对象。用户询问其他方案时介绍当前 ImageVersion 返回的全部方案，允许在选定方案基础上按用户要求调整个别开放罚分。完成数据准备、内部字段映射、缺口和风险识别，生成带内部 revision 的创建草稿。必填缺口、未确认关键映射、明显非法值或当前 revision 的地点校验未通过时，不得进入创建确认。
 
-Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定时，于确认前显式写入 `request_payload.options.draw_route=true`；保留用户明确提供的合法值。该 Skill 默认行为不改变 Gateway 默认值，完整处理规则见参数构建参考。
+Skill 求解默认开启路线绘制：在当前 Schema 允许且用户未指定时，于确认前显式写入 `request_payload.options.draw_route=true`；保留用户明确提供的合法值。该 Skill 默认行为不改变 Gateway 默认值，资源规格默认标准档，约束模式未指定且无继承设置时初选全面兼顾，确认卡支持强度与约束多组切换，详见同一参考。
 
 ### 3. Gateway 求解任务执行
 

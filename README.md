@@ -8,20 +8,20 @@ Planly 场景求解插件：Skill + 插件自带 Gateway MCP + 宿主 OAuth；�
 | Skill 标识 | `planly-solver` |
 | 插件内 MCP 名 | `planly`（业务工具仍为 `gateway.*`） |
 | 展示名称 | Planly 场景求解 |
-| Plugin / Skill 版本 | **1.3.9**（发布标签 `v1.3.9`） |
+| Plugin / Skill 版本 | **1.3.10**（待发布标签 `v1.3.10`） |
 
-**v1.3.9：易懂且有依据的专业派单解释。** 用本次硬约束、目标优先级及实际指标说明取舍，按解释价值展示得分；删除重复限制，Skill 两份解释相关文件合计减少 1,450 个字符。任务绑定、时间语义、异常披露和创建确认门禁不变。见 [发布说明](docs/releases/v1.3.9.md)。不部署 Gateway、不更新用户安装。
+**v1.3.10：求解强度与约束模式双组选项。** 参数摘要前预选当前设置，可按需切换并一次确认求解；强度为轻量、标准、增强，约束模式为全面兼顾、均衡优先、效率优先。见 [发布说明](docs/releases/v1.3.10.md)。
 
-**已知验收限制：** 本轮历史公开数据的同址问答与得分/最优性追问回放通过，盲评认为目标解释优于旧版；不代表所有人选问题、实时 MCP 或真实 GPT Desktop 已验收。此前未通过项未全部重测，表格合计范围仍可更清晰。详见 [验收清单](docs/acceptance.md)。
+**接入与验收：** 双组选项需要配套 Gateway 更新；约束模式映射当前 ImageVersion 的真实公开方案，缺少对应模式时展示实际可用方案，不修改引擎权重。本轮自动化与本地模拟宿主验证不代替真实 GPT Desktop 验收。详见 [验收清单](docs/acceptance.md)。
 
 **保留的续期修复：** 服务器级 OAuth scopes 固定为 `gateway:mcp` 与 `offline_access`。前者是唯一 Gateway 业务权限，后者只请求 OAuth 离线续期，不授予资料、组织或管理权限。v1.3.1 及更早版本即使服务端允许 refresh token，也会因未请求 `offline_access` 而只拿到 access token；客户端不会自动获得本次包更新。详见 [scope 规范与验证边界](docs/oauth-scopes.md)。
 
 ## 安装与使用
 
-安装发布版本 `1.3.9` 时使用标签 `v1.3.9`：
+`v1.3.10` 标签发布后，可使用以下命令安装：
 
 ```bash
-codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.9
+codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.10
 ```
 
 在支持 Plugins Directory 的桌面客户端找到 **Planly 场景求解**并安装，启用插件内 `planly` MCP，在宿主 Authenticate 入口完成 OAuth，然后开启新会话：
@@ -71,7 +71,7 @@ Skill 从 Gateway 的任务展示提示分别获取 `map_display_tool_name`、`g
 
 上述双工具 / 双资源为已冻结的接入契约，不代表 Gateway、引擎或真实宿主已完成迁移。提示缺失或目录未就绪时降级为摘要和网页入口，不回退旧单工具契约，也不把只读调用成功当作 UI 已渲染。
 
-2026-10-19 已从 Gateway 逐字节同步 16 个公开 Skill 文件；Plugin / Skill 版本为 `1.3.9`，使用新标签 `v1.3.9`。来源与验证边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；包更新不表示已更新用户安装或部署上游服务。
+2026-10-19 已从 Gateway 逐字节同步 16 个公开 Skill 文件；Plugin / Skill 版本为 `1.3.10`，待通过新标签 `v1.3.10` 发布。来源与验证边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；包更新不表示已更新用户安装或部署上游服务。
 
 ## 本地验证
 
@@ -85,6 +85,13 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 公开配置更新后执行 `python3 scripts/build_mcp_config.py`。自动化测试使用临时目录和模拟数据，不连接真实账号、不创建任务、不写用户 Codex 配置。真实宿主 OAuth、MCP Apps、地图网络与展示效果按验收清单独立记录。
 
 设置 `PLANLY_CODEX_BIN` 可额外运行真实 Codex 二进制的隔离协议测试，详见验收清单；默认不自动安装客户端。原生 MCP/OAuth 请求与资源读取通过仍不代表实际桌面 UI 已渲染。
+
+## 1.3.10 变更
+
+- 在求解参数摘要前展示强度与约束两组选项，由 Skill 预选当前值；可独立切换，统一“确认求解”，无需额外文字确认。
+- 求解强度为轻量、标准、增强；未指定时采用标准档，保留用户选择或继承设置，日常仅展示档位名称。
+- 约束模式为全面兼顾、均衡优先、效率优先；无指定或继承设置时初选全面兼顾，按当前公开方案绑定真实参数并保留自定义覆盖。
+- 旧服务或无 UI 宿主沿用按钮或文字确认；保留草稿、候选映射、费用复核及重复提交门禁。公开连接、OAuth、MCP 配置和品牌不变。
 
 ## 1.3.9 变更
 

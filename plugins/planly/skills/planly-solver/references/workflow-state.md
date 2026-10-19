@@ -80,6 +80,7 @@ confirmation:
   image_version_id: null
   quote: null # 当前单价、时长、预计积分，不含凭据
   status: null # pending | consumed | invalidated
+  choice_bindings: null # 多组问题的候选 ID 到参数映射
   confirmed_revision: null
 job:
   job_id: null
@@ -121,8 +122,8 @@ evidence:
 - Schema 允许集中结构时，混合草稿必须先规范化并记录为 `centralized_refs / schema_preferred`：保留已有 ID，为确实缺失且 Schema 要求 ID 的地点只生成一次稳定 ID，替换内嵌地点引用。该转换属于草稿变化，必须增加 revision、清空创建确认并重新校验；无法无损转换时保持 `failed`，不得静默合并同名地点。
 - 每次检查当前草稿后，把 `location_validation.checked_revision` 设为被检查的 revision；只有地点模式、位置完整性、ID 唯一性、引用和坐标均通过时才设置 `status=passed`，否则设置 `status=failed` 并保留阻断问题。
 - 只有 `schema.composite_validation_view_ready` 为 `true` 且约束相关场景事实充分时，才能设置 `constraint_selection.recommended_preset_id` 或 `selected_preset_id`。
-- 任一创建字段变化都必须增加 `draft.revision`，把当前确认问题置为 `invalidated`，把 `confirmation.confirmed_revision` 和 `location_validation.checked_revision` 清空，并把 `location_validation.status` 重置为 `pending`；即使地点字段未变，也必须对新 revision 重新执行地点检查。
-- 确认问题的 question_id 唯一且绑定当前草稿、可信连接、镜像及已展示费用；只允许 pending 的匹配问题及一个 confirm_solve 选项完成确认。edit_parameters、参数或计费变化使绑定失效；未知/过期问题、普通选择、地图/Gantt意图不得创建。创建尝试前消费确认，重复消息或结果未知不再次调用创建。无卡片时允许当前摘要后的明确文字确认；绑定丢失则重新展示，不能恢复已消费确认。
+- 任一创建字段变化都必须增加 `draft.revision`，把当前确认问题置为 `invalidated`（本次已绑定多组组合按下一条处理），把 `confirmation.confirmed_revision` 和 `location_validation.checked_revision` 清空，并把 `location_validation.status` 重置为 `pending`；即使地点字段未变，也必须对新 revision 重新执行地点检查。
+- 确认问题的 question_id 唯一且绑定当前草稿、可信连接、镜像及已展示费用；只允许 pending 的匹配问题及一个 confirm_solve 选项，或[任务执行](job-execution.md)登记的完整多组回传完成确认。多组按固定候选映射生成新 revision 并重新校验后确认本次选中组合，不复用旧 revision 的检查结果。edit_parameters、绑定组合外的参数变化或计费变化使绑定失效；未知/过期问题、普通选择、地图/Gantt意图不得创建。创建尝试前消费确认，重复消息或结果未知不再次调用创建。无卡片时允许当前摘要后的明确文字确认；绑定丢失则重新展示，不能恢复已消费确认。
 - `draft.revision` 和 `confirmation.confirmed_revision` 只用于 Agent 内部绑定确认，不向业务用户展示，也不要求用户复述 revision 编号。
 - 地址解析候选不是最终事实；只有用户确认的 POI 或坐标才能进入字段映射和草稿。
 - 网点、仓库或站点位置适用同一规则；存在网点引用但没有已确认有效位置时必须保持为阻断缺口。
@@ -154,7 +155,7 @@ evidence:
 
 ### 草稿改变
 
-`image_version_id`、`map_provider`、`expected_solve_duration`、`request_payload` 或 `constraint_overrides` 任一字段变化都视为新 revision。新 revision 必须把地点校验重置为 `pending` 并重新检查，地点修复和混合结构规范化也不例外。更换约束方案或调整个别罚分后必须重新计算 `constraint_overrides`；只要最终覆盖项发生变化，就重新执行辅助检查、积分查询、摘要展示和用户确认。
+`image_version_id`、`map_provider`、`expected_solve_duration`、`request_payload` 或 `constraint_overrides` 任一字段变化都视为新 revision。新 revision 必须把地点校验重置为 `pending` 并重新检查，地点修复和混合结构规范化也不例外。更换约束方案或调整个别罚分后必须重新计算 `constraint_overrides`；最终覆盖项变化须重新检查和复核积分；已在多组卡明确展示并提交的绑定组合按任务执行规则确认，其他变化须重新展示摘要并确认。
 
 `map_provider` 改变时同步更新 map_selection 的值与来源，清空地址解析候选和已确认位置映射，并使用新图商重新解析。
 

@@ -17,11 +17,59 @@ EXECUTION = SKILL / "references/job-execution.md"
 
 
 class PluginPackageTest(unittest.TestCase):
+    def test_constraint_mode_names_are_four_characters_and_keep_real_preset_bindings(self):
+        # This is a display/instruction contract, not an engine-weight change.
+        section = PARAMETERS.read_text(encoding="utf-8").split("## 约束方案推荐与个别调整\n", 1)[1].split("\n## ", 1)[0]
+        rows = [
+            [cell.strip() for cell in line.strip("|").split("|")]
+            for line in section.splitlines() if line.startswith("|")
+        ][2:]
+        self.assertEqual(["全面兼顾", "均衡优先", "效率优先"], [row[0] for row in rows])
+        self.assertTrue(all(len(row) == 2 and len(row[0]) == 4 and row[1] for row in rows))
+        self.assertIn("工作时长", rows[1][1])
+        self.assertIn("工单数量", rows[1][1])
+        self.assertIn("行驶距离", rows[2][1])
+        self.assertIn("在途用时", rows[2][1])
+        for invariant in ("未指定倾向且无继承设置时初始选中“全面兼顾”", "自定义覆盖也保留",
+                          "真实方案 ID 与分值", "不按标题相似或列表顺序套用", "不为凑齐三项编造罚分"):
+            self.assertIn(invariant, section)
+        self.assertIn("parameter-building.md#约束方案推荐与个别调整", EXECUTION.read_text(encoding="utf-8"))
+        self.assertNotRegex(section, r"[0-9]+hard/[0-9]+medium/[0-9]+soft")
+
+    def test_group_confirmation_binds_defaults_candidate_mapping_and_revalidated_revision(self):
+        execution = EXECUTION.read_text(encoding="utf-8")
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        parameters = PARAMETERS.read_text(encoding="utf-8")
+        for marker in ("selected_option_ids=[当前值ID]", "confirm_label=确认求解", "resource_spec", "constraint_mode",
+                       "当前设置（已调整）", "choice_bindings", "完整 `selected_groups`", "各组恰好出现一次",
+                       "按 ID 而非 label", "重新通过 Schema 和地点校验", "候选映射", "仅支持 `presentation=buttons`"):
+            self.assertIn(marker, execution)
+        self.assertIn("choice_bindings: null", workflow)
+        self.assertIn("不复用旧 revision 的检查结果", workflow)
+        self.assertIn("默认采用标准 `medium`", parameters)
+        self.assertIn("不单独询问", parameters)
+        self.assertNotIn("仅一个 confirm_solve 选项完成确认", workflow)
+
+    def test_resource_tier_mapping_has_three_names_without_hardware_columns(self):
+        section = PARAMETERS.read_text().split("## 求解资源规格\n", 1)[1].split("\n## ", 1)[0]
+        rows = [
+            [cell.strip().strip("`") for cell in line.strip("|").split("|")]
+            for line in section.splitlines()
+            if line.startswith("|") and "`" in line
+        ]
+        self.assertEqual(3, len(rows))
+        self.assertTrue(all(len(row) == 2 for row in rows))
+        self.assertEqual({
+            "small": "轻量",
+            "medium": "标准",
+            "large": "增强",
+        }, {code: label for label, code in rows})
+
     def test_manifest_skill_and_release_versions_agree(self):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual("1.3.9", version)
+        self.assertEqual("1.3.10", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]
@@ -352,7 +400,7 @@ class PluginPackageTest(unittest.TestCase):
 
         self.assertLess(
             execution.index("location_validation.status=passed"),
-            execution.index("是否按以上参数创建求解任务"),
+            execution.index("### 确认卡与文字降级"),
         )
         self.assertLess(
             execution.index("调用 `gateway.solver_jobs.create` 前再次确认"),
