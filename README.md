@@ -8,7 +8,7 @@ Planly 场景求解插件：Skill + 插件自带 Gateway MCP + 宿主 OAuth；�
 | Skill 标识 | `planly-solver` |
 | 插件内 MCP 名 | `planly`（业务工具仍为 `gateway.*`） |
 | 展示名称 | Planly 场景求解 |
-| Plugin / Skill 版本 | **1.3.10**（待发布标签 `v1.3.10`） |
+| Plugin / Skill 版本 | **1.3.10**（发布标签 `v1.3.10`） |
 
 **v1.3.10：求解强度与约束模式双组选项。** 参数摘要前预选当前设置，可按需切换并一次确认求解；强度为轻量、标准、增强，约束模式为全面兼顾、均衡优先、效率优先。见 [发布说明](docs/releases/v1.3.10.md)。
 
@@ -18,7 +18,7 @@ Planly 场景求解插件：Skill + 插件自带 Gateway MCP + 宿主 OAuth；�
 
 ## 安装与使用
 
-`v1.3.10` 标签发布后，可使用以下命令安装：
+安装发布版本 `1.3.10` 时使用标签 `v1.3.10`：
 
 ```bash
 codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.10
@@ -71,7 +71,7 @@ Skill 从 Gateway 的任务展示提示分别获取 `map_display_tool_name`、`g
 
 上述双工具 / 双资源为已冻结的接入契约，不代表 Gateway、引擎或真实宿主已完成迁移。提示缺失或目录未就绪时降级为摘要和网页入口，不回退旧单工具契约，也不把只读调用成功当作 UI 已渲染。
 
-2026-10-19 已从 Gateway 逐字节同步 16 个公开 Skill 文件；Plugin / Skill 版本为 `1.3.10`，待通过新标签 `v1.3.10` 发布。来源与验证边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；包更新不表示已更新用户安装或部署上游服务。
+2026-10-19 已从 Gateway 逐字节同步 16 个公开 Skill 文件；Plugin / Skill 版本为 `1.3.10`，通过新标签 `v1.3.10` 发布。来源与验证边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；包更新不表示已更新用户安装或部署上游服务。
 
 ## 本地验证
 
