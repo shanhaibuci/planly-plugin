@@ -76,11 +76,27 @@ class PluginPackageTest(unittest.TestCase):
         self.assertRegex(frontmatter, r"(?m)^name: planly-solver$")
         self.assertIn(f'version: "{version}"', frontmatter)
         self.assertEqual(PLUGIN.name, manifest["name"])
-        self.assertEqual("Planly 场景求解", manifest["interface"]["displayName"])
+        self.assertEqual("Planly 智能规划助理", manifest["interface"]["displayName"])
         self.assertIn("$planly-solver", (SKILL / "agents/openai.yaml").read_text())
         self.assertEqual("./skills/", manifest["skills"])
         self.assertEqual("./.mcp.json", manifest["mcpServers"])
         self.assertNotIn("apps", manifest)
+
+    def test_plugin_and_skill_display_names_agree_without_renaming_technical_ids(self):
+        manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
+        market = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())
+        skill_ui = (SKILL / "agents/openai.yaml").read_text(encoding="utf-8")
+        display_name = manifest["interface"]["displayName"]
+        self.assertIn(f'  display_name: "{display_name}"\n', skill_ui)
+        for prompt in manifest["interface"]["defaultPrompt"]:
+            self.assertIn(display_name, prompt)
+        self.assertIn(display_name, skill_ui.split('  default_prompt: ', 1)[1])
+        self.assertIn("$planly-solver", skill_ui)
+        self.assertEqual("planly", manifest["name"])
+        self.assertEqual("planly", market["plugins"][0]["name"])
+        self.assertEqual("personal", market["name"])
+        self.assertIn(f"| 展示名称 | {display_name} |", (ROOT / "README.md").read_text())
+        self.assertNotIn("Planly 场景求解", json.dumps(manifest, ensure_ascii=False) + skill_ui)
 
     def test_installation_instructions_use_current_release(self):
         version = (ROOT / "VERSION").read_text().strip()
