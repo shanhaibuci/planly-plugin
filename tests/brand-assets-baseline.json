@@ -1,29 +1,29 @@
 {
   "composerIcon": {
     "path": "./assets/icon.png",
-    "source": "docs/brand-assets/planly/screen/logo-256.png",
+    "source": "docs/brand-assets/planly/favicon/favicon.png",
     "size": [
       256,
       256
     ],
-    "sha256": "ea4b74358d342793f36fcf0843c94de94368513525ed8b0759d305e51e9fd4f6"
+    "sha256": "1935b60150d9a3e104c435781ec561b7712f3b3ff1b2bd208326683ae46caf79"
   },
   "logo": {
     "path": "./assets/logo.png",
-    "source": "docs/brand-assets/planly/png/logo-horizontal-4096.png",
+    "source": "docs/brand-assets/planly/screen/logo-horizontal.png",
     "size": [
-      4096,
-      1218
+      1480,
+      440
     ],
-    "sha256": "c35886cef42261a16617315a4f51f4afe9f88a655d2e2d68938cc0d2ed6844cc"
+    "sha256": "095fd364137b8ea44c75b304856d83c9a40bb33e50697228361529af776d9cf8"
   },
   "logoDark": {
     "path": "./assets/logo-dark.png",
-    "source": "docs/brand-assets/planly/png/logo-horizontal-white-2048.png",
+    "source": "docs/brand-assets/planly/screen/logo-horizontal-dark.png",
     "size": [
-      2048,
-      609
+      1480,
+      440
     ],
-    "sha256": "f3b160246217833129b0d5c1f2a4b86540ada897ba0adaaf100c28ac8f679954"
+    "sha256": "4962f88aef30b871296b36e045b42e577bf66d3da5852b1aedb49d476b62774a"
   }
 }

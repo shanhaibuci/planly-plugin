@@ -115,3 +115,10 @@
 - 同步两组选项确认、轻量/标准/增强强度、全面兼顾/均衡优先/效率优先约束名称及真实参数映射；保留已有设置、费用复核和创建确认门禁。公共卡片实现由 Gateway 提供，Plugin 不捆绑 HTML。
 - 常规包测试 69 项通过，4 项可选原生客户端测试未启用；MCP 配置生成、Skill 结构、版本和逐字节一致性检查通过。配套验证见 [验收清单](acceptance.md)。
 - 升版提交后，用户明确要求打 tag 并推送，本版通过新标签 `v1.3.10` 发布；未部署或更新用户安装，公开连接、OAuth、品牌和引擎权重不变。发布说明见 [v1.3.10](releases/v1.3.10.md)。
+
+## v1.3.11 品牌同步与源码升版（2026-10-22）
+
+- 品牌来自 Gateway 当前正式 `docs/brand-assets/planly/`：三张 PNG 与 Quicksand 许可逐字节同步，图标采用 `favicon/favicon.png`，深浅色横排采用 `screen/logo-horizontal.png` 和 `screen/logo-horizontal-dark.png`；源路径、尺寸和指纹记录在品牌基线中。
+- Skill 沿用 Plugin 提交 `0215bb7bb293265b02449401024497c72ae4cb64` 的 `1.3.10` 内容，最初同步来源仍为 Gateway 提交 `b7467b12ef8c7918bda5d82b0fb8bda5c996bc7d`；仅 `SKILL.md` 与 `VERSION` 的版本声明改为 `1.3.11`，其余 14 个公开 Skill 文件不变。
+- 根版本、Plugin 清单与内置 Skill 统一为 `1.3.11`。本次不将版本或其他修改反向同步到 Gateway，不改变公开端点、OAuth、MCP 配置或清单资产路径。
+- 用户仅要求提交并升级版本；本次只创建本地源码提交，不创建或推送标签，不部署服务或更新用户安装。包内验证与真实客户端品牌显示分开记录，详见 [版本说明](releases/v1.3.11.md)。

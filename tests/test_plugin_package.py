@@ -69,7 +69,7 @@ class PluginPackageTest(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual("1.3.10", version)
+        self.assertEqual("1.3.11", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]
@@ -136,24 +136,36 @@ class PluginPackageTest(unittest.TestCase):
                 path = (PLUGIN / interface[key]).resolve()
                 self.assertTrue(path.is_relative_to(PLUGIN.resolve()))
                 self.assertTrue(path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"))
-        license_text = (PLUGIN / "assets/OFL-Outfit.txt").read_text()
+        license_path = PLUGIN / "assets/OFL-Quicksand.txt"
+        license_text = license_path.read_text(encoding="utf-8")
         self.assertIn("SIL OPEN FONT LICENSE", license_text)
-        self.assertIn("The Outfit Project Authors", license_text)
+        self.assertIn("The Quicksand Project Authors", license_text)
+        self.assertEqual(
+            "b4578833b5c1ce3a9a811df806760ba4e98566c3b52689808fa1290f946450fc",
+            hashlib.sha256(license_path.read_bytes()).hexdigest(),
+            "Ship the complete, unchanged Quicksand license",
+        )
+        self.assertFalse((PLUGIN / "assets/OFL-Outfit.txt").exists())
         self.assertFalse((PLUGIN / "assets/OFL-DMSerifDisplay.txt").exists())
 
-    def test_brand_assets_match_approved_knight_a_baseline(self):
+    def test_brand_assets_match_approved_ice_blue_baseline(self):
         baseline = json.loads((ROOT / "tests/brand-assets-baseline.json").read_text())
         interface = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())["interface"]
-        self.assertEqual({"composerIcon", "logo", "logoDark"}, set(baseline))
+        approved_sources = {
+            "composerIcon": ("docs/brand-assets/planly/favicon/favicon.png", [256, 256]),
+            "logo": ("docs/brand-assets/planly/screen/logo-horizontal.png", [1480, 440]),
+            "logoDark": ("docs/brand-assets/planly/screen/logo-horizontal-dark.png", [1480, 440]),
+        }
+        self.assertEqual(set(approved_sources), set(baseline))
         for key, expected in baseline.items():
             with self.subTest(asset=key):
+                self.assertEqual(approved_sources[key], (expected["source"], expected["size"]))
                 self.assertEqual(expected["path"], interface[key])
                 data = (PLUGIN / interface[key]).read_bytes()
                 self.assertEqual(expected["sha256"], hashlib.sha256(data).hexdigest())
                 self.assertEqual(b"IHDR", data[12:16])
                 self.assertEqual(expected["size"], list(struct.unpack(">II", data[16:24])))
                 self.assertEqual(6, data[25], "Brand PNG must retain its RGBA channel")
-                self.assertTrue(expected["source"].startswith("docs/brand-assets/planly/"))
 
     def test_skill_local_reference_links_resolve_inside_bundle(self):
         for source in SKILL.rglob("*.md"):
