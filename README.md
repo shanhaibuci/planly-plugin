@@ -8,7 +8,7 @@ Planly 场景求解插件：Skill + 插件自带 Gateway MCP + 宿主 OAuth；�
 | Skill 标识 | `planly-solver` |
 | 插件内 MCP 名 | `planly`（业务工具仍为 `gateway.*`） |
 | 展示名称 | Planly 场景求解 |
-| Plugin / Skill 版本 | **1.3.11**（未发布；计划标签 `v1.3.11`） |
+| Plugin / Skill 版本 | **1.3.11**（发布标签 `v1.3.11`） |
 
 **v1.3.11：同步当前 Planly 品牌。** 小图标及深浅色横排 Logo 更新为已确认的「01 冰蓝浅底」时空折叠与路径方案，并同步 Quicksand 字标许可和品牌测试基线；不改变 Skill 行为或 MCP / OAuth 配置。见 [版本说明](docs/releases/v1.3.11.md)。
 
@@ -18,7 +18,7 @@ Planly 场景求解插件：Skill + 插件自带 Gateway MCP + 宿主 OAuth；�
 
 ## 安装与使用
 
-当前源码版本为 `1.3.11`，尚未创建或推送发布标签。以下命令仅在计划标签 `v1.3.11` 正式创建并推送后使用；此前固定旧标签的安装不会取得本次品牌更新：
+安装发布版本 `1.3.11` 时使用标签 `v1.3.11`；固定旧标签的安装不会取得本次品牌更新：
 
 ```bash
 codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.11
@@ -71,7 +71,7 @@ Skill 从 Gateway 的任务展示提示分别获取 `map_display_tool_name`、`g
 
 上述双工具 / 双资源为已冻结的接入契约，不代表 Gateway、引擎或真实宿主已完成迁移。提示缺失或目录未就绪时降级为摘要和网页入口，不回退旧单工具契约，也不把只读调用成功当作 UI 已渲染。
 
-Skill 沿用 2026-10-19 从 Gateway 同步的 `1.3.10` 内容，本次仅将两处 Skill 版本声明与 Plugin 一并升级为 `1.3.11`，不改变行为或反向修改 Gateway。来源与验证边界见 [同步记录](docs/gateway-skill-sync.md)。所有既有 tag 保持不变；源码升版不表示已发布、更新用户安装或部署上游服务。
+Skill 沿用 2026-10-19 从 Gateway 同步的 `1.3.10` 内容，本次仅将两处 Skill 版本声明与 Plugin 一并升级为 `1.3.11`，不改变行为或反向修改 Gateway。来源与验证边界见 [同步记录](docs/gateway-skill-sync.md)。本次通过新标签 `v1.3.11` 发布，所有既有 tag 保持不变；发布不表示已更新用户安装或部署上游服务。
 
 ## 本地验证
 
@@ -91,7 +91,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 - 从 Gateway 正式品牌包逐字节同步 256 × 256 图标和两种 1480 × 440 横排 Logo，保持透明背景和原清单路径。
 - 替换为完整 Quicksand 许可，移除未使用的 Outfit 许可；同步品牌源路径、尺寸与 SHA-256 基线及回归测试。
 - 根版本、Plugin 清单和内置 Skill 版本统一为 `1.3.11`；不修改 Skill 行为、公开端点、OAuth 或 MCP 配置。
-- 本次只提交源码并升版本，不创建或推送标签，不部署服务或更新用户安装。
+- 按用户后续要求创建并推送新标签 `v1.3.11`，既有标签不变；不部署服务或更新用户安装。
 
 ## 1.3.10 变更
 
@@ -191,4 +191,4 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 `tests/brand-assets-baseline.json` 记录源路径、尺寸与 SHA-256，独立仓库测试无需访问 Gateway。横排字标已经转为图形，不加载运行时字体；完整许可从 `source/wordmark/fonts/OFL-Quicksand.txt` 同步到 `assets/OFL-Quicksand.txt`，不再交付未使用的 Outfit 许可，不代表软件或商标采用相同许可。
 
-市场技术标识保留 `personal`，展示名为 `Planly Plugins`，不重建市场身份。本次品牌同步随 Plugin / Skill `1.3.11` 源码升版提交，尚未创建或推送发布标签，既有标签不变；不会修改远端 App 或 OAuth 登录页的 Logo，客户端需安装后续正式发布的版本。
+市场技术标识保留 `personal`，展示名为 `Planly Plugins`，不重建市场身份。本次品牌同步随 Plugin / Skill `1.3.11` 以新标签 `v1.3.11` 发布，既有标签不变；不会修改远端 App 或 OAuth 登录页的 Logo，客户端需安装包含这些资产的新版本。
