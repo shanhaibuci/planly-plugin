@@ -1,6 +1,6 @@
 {
   "name": "planly",
-  "version": "1.3.11",
+  "version": "1.3.12",
   "description": "通过 Planly工作台分析规划场景、构建求解参数、提交任务并解释结果。",
   "author": {
     "name": "Planly",
@@ -8,7 +8,7 @@
   },
   "skills": "./skills/",
   "interface": {
-    "displayName": "Planly 智能规划助理",
+    "displayName": "Planly 规划助理",
     "shortDescription": "连接 Planly工作台完成规划场景求解",
     "longDescription": "分析派单、路径规划、排程与资源规划需求，通过插件自带的 Gateway MCP 和宿主 OAuth 创建、跟踪任务。在支持 MCP Apps 的宿主中请求只读地图、Gantt 与规划回放；创建任务前必须获得用户确认。直接 MCP 接入面向桌面端/Codex，真实 UI 能力以客户端验收为准。",
     "developerName": "Planly",
@@ -18,7 +18,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "使用 Planly 智能规划助理分析我的规划需求，并在创建任务前向我确认。"
+      "使用 Planly 规划助理分析我的规划需求，并在创建任务前向我确认。"
     ],
     "composerIcon": "./assets/icon.png",
     "logo": "./assets/logo.png",

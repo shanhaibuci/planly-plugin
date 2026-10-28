@@ -69,14 +69,14 @@ class PluginPackageTest(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual("1.3.11", version)
+        self.assertEqual("1.3.12", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]
         self.assertRegex(frontmatter, r"(?m)^name: planly-solver$")
         self.assertIn(f'version: "{version}"', frontmatter)
         self.assertEqual(PLUGIN.name, manifest["name"])
-        self.assertEqual("Planly 智能规划助理", manifest["interface"]["displayName"])
+        self.assertEqual("Planly 规划助理", manifest["interface"]["displayName"])
         self.assertIn("$planly-solver", (SKILL / "agents/openai.yaml").read_text())
         self.assertEqual("./skills/", manifest["skills"])
         self.assertEqual("./.mcp.json", manifest["mcpServers"])
@@ -96,7 +96,10 @@ class PluginPackageTest(unittest.TestCase):
         self.assertEqual("planly", market["plugins"][0]["name"])
         self.assertEqual("personal", market["name"])
         self.assertIn(f"| 展示名称 | {display_name} |", (ROOT / "README.md").read_text())
-        self.assertNotIn("Planly 场景求解", json.dumps(manifest, ensure_ascii=False) + skill_ui)
+        published_ui = json.dumps(manifest, ensure_ascii=False) + skill_ui
+        for retired_name in ("Planly 场景求解", "Planly 智能规划助理"):
+            with self.subTest(retired_name=retired_name):
+                self.assertNotIn(retired_name, published_ui)
 
     def test_installation_instructions_use_current_release(self):
         version = (ROOT / "VERSION").read_text().strip()

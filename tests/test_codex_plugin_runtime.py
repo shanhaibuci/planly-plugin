@@ -190,7 +190,7 @@ class CodexPluginRuntimeTest(unittest.TestCase):
         plugin = self.rpc("plugin/read", params)["plugin"]
         self.assertEqual([], plugin["apps"])
         self.assertEqual(["planly"], plugin["mcpServers"])
-        self.assertEqual("Planly 智能规划助理", plugin["summary"]["interface"]["displayName"])
+        self.assertEqual("Planly 规划助理", plugin["summary"]["interface"]["displayName"])
         status = self.rpc("mcpServerStatus/list", {})["data"]
         self.assertEqual(1, len(status))
         self.assertEqual("planly@personal", status[0]["pluginId"])
