@@ -1,5 +1,7 @@
 # Gateway Skill 同步记录
 
+当前版本为 `1.3.13`（2026-11-04），已同步 Planly 新域名；用户已授权本地提交与新 annotated 标签 `v1.3.13`，不推送远端，见文末记录。下文保留各历史同步阶段当时的来源与发布状态。
+
 日期：2026-09-28。来源：Gateway 提交 `8a34acd8`。
 
 ## 同步范围
@@ -146,3 +148,14 @@
 - 本次 Skill 文件树清单 SHA-256 为 `17f819bc7393ad595fa8dd490b2a904c5c7471a347c787cbc9b1ca9d50bc6374`（按相对路径排序，逐行 `sha256  path` 加换行后计算）；结构、版本和逐字节一致性验证通过，测试结果见验收清单。
 - 求解流程、品牌、技术标识、市场身份、公开端点与 MCP / OAuth 配置不变；Gateway 应用构建版本独立保留。
 - 用户在验证后授权提交、打标签并推送，Plugin 通过新标签 `v1.3.12` 发布，Gateway 源 Skill 同步提交；不覆盖既有标签、不部署或更新用户安装。此前不修改 Gateway 的限制是单独更名阶段的范围，本次 Gateway 同步及源码发布已获用户明确授权。
+
+## v1.3.13 Planly 域名同步（2026-11-04，本地源码发行）
+
+- 来源为 Gateway 提交 `5cc22a2a9f31041951bc5042f00f5e6ba4603e63` 中的 `skills/planly-solver/`，已直接读取该 commit 树验证 16 个公开文件逐字节一致，文件树 SHA-256 为 `53e0c744cf5a00c0f07f68698c90305afaff8116756a141b7acb238fb853013d`（相对路径排序，逐行 `sha256  path` 加换行）。Gateway 应用独立为 `1.1.2-SNAPSHOT`；该 commit 与本地 annotated 标签 `v1.1.2-SNAPSHOT` 对应，不改变 Skill 的 `1.3.13` 版本。
+- 相对 `v1.3.12`，Skill 仅改变 `VERSION`、`SKILL.md` 的版本声明与 `config/system-endpoint.json`；其他 13 个文件不变，求解指导、公开 OAuth Client ID、callback 和 `gateway:mcp offline_access` 保持原值。
+- 根版本、Plugin 清单及内置 Skill 均为 `1.3.13`；marketplace 保留现有标识、路径和策略，其结构没有版本字段，不新增第二套版本来源。
+- 唯一公开 origin 为 `https://app.planly.cn`，由 `scripts/build_mcp_config.py` 确定性生成 `.mcp.json` 的 `https://app.planly.cn/mcp`。新 resource 与 `https://auth.planly.cn/oidc` Issuer 由 Gateway 发现元数据提供，不硬编码第二套发现配置。
+- 仅更新端点的公开配置基线指纹；OAuth 配置、品牌文件及其基线不变。同步 Gateway 的端点变更回归，验证新 URL/resource、既有 Client ID/callback/scopes 和其他配置前缀字节保留。
+- 常规与显式启用的原生隔离测试共 74 项全部通过，0 跳过；4 项原生测试使用已有 Codex `0.162.0-alpha.17.2`、隔离 HOME/CODEX_HOME 和 loopback 模拟 MCP/OAuth，覆盖注册客户端、显式 scopes、宽/缺失发现列表及 UI 资源传输。MCP 配置生成检查、版本一致性和凭据打包边界检查通过。
+
+旧域协议入口已返回 410，更新地址不能保留旧 Issuer/resource 的 OAuth 身份；用户需要安装新版本并重新授权。用户在包验证后授权本地提交与新 annotated 标签 `v1.3.13`；本轮不推送远端、移动既有标签、部署服务、修改用户安装或认证数据。历史发布记录保持原样，真实目标桌面的安装、登录、续期及图形渲染仍须独立验收。详见 [v1.3.13 说明](releases/v1.3.13.md)。

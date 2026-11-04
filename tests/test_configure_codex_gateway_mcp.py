@@ -558,13 +558,24 @@ class ConfigureCodexGatewayMcpTest(unittest.TestCase):
         self.assertFalse((self.codex_home / "config.toml").exists())
 
     def test_oauth_changed_endpoint_drives_new_config(self) -> None:
+        path = self.codex_home / "config.toml"
+        original = ('model = "existing"\n'
+                    '[mcp_servers.other]\nurl = "https://other.example/mcp"\n'
+                    'disabled_tools = ["write"]\n')
+        path.write_text(original)
         with mock.patch.object(MODULE, "load_system_endpoint", return_value={
             "origin": "https://new-environment.example", "mcp_path": "/mcp",
         }):
             result = self.run_script("apply", auth=None)
         self.assertEqual(0, result.returncode, result.stderr)
-        config = tomllib.loads((self.codex_home / "config.toml").read_text())
-        self.assertEqual("https://new-environment.example/mcp", config["mcp_servers"]["gateway"]["url"])
+        self.assertTrue(path.read_text().startswith(original))
+        config = tomllib.loads(path.read_text())
+        connection = config["mcp_servers"]["gateway"]
+        self.assertEqual("https://new-environment.example/mcp", connection["url"])
+        self.assertEqual("https://new-environment.example/mcp", connection["oauth_resource"])
+        self.assertEqual(self.oauth_client["client_id"], connection["oauth"]["client_id"])
+        self.assertEqual(self.oauth_client["callback_url"], connection["oauth"]["callback_url"])
+        self.assertEqual(self.oauth_client["scopes"], connection["scopes"])
 
     def test_oauth_atomic_write_failure_preserves_original(self) -> None:
         path = self.codex_home / "config.toml"

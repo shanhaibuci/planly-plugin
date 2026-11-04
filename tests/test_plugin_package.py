@@ -69,7 +69,7 @@ class PluginPackageTest(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin/plugin.json").read_text())
         version = (ROOT / "VERSION").read_text().strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
-        self.assertEqual("1.3.12", version)
+        self.assertEqual("1.3.13", version)
         self.assertEqual(version, manifest["version"])
         self.assertEqual(version, (SKILL / "VERSION").read_text().strip())
         frontmatter = (SKILL / "SKILL.md").read_text().split("---", 2)[1]
@@ -449,8 +449,8 @@ class PluginPackageTest(unittest.TestCase):
         self.assertIn("未验证", (ROOT / "docs/acceptance.md").read_text())
 
     def test_public_connections_match_approved_baseline(self):
-        # Routing and public OAuth registration stay fixed. The old App binding
-        # is intentionally removed; its absence has a separate regression test.
+        # The approved domain migration changes routing only. Public OAuth
+        # registration and the package's credential boundary stay fixed.
         baseline = json.loads((ROOT / "tests/public-config-baseline.json").read_text())
         self.assertEqual({
             "skills/planly-solver/config/system-endpoint.json",
@@ -462,7 +462,8 @@ class PluginPackageTest(unittest.TestCase):
                 self.assertEqual(expected, actual)
         endpoint = json.loads((SKILL / "config/system-endpoint.json").read_text())
         self.assertEqual({"origin", "mcp_path"}, set(endpoint))
-        self.assertEqual("https", urlparse(endpoint["origin"]).scheme)
+        self.assertEqual("https://app.planly.cn", endpoint["origin"])
+        self.assertEqual("/mcp", endpoint["mcp_path"])
         oauth = json.loads((SKILL / "config/oauth-client.json").read_text())
         self.assertEqual({"client_id", "callback_url", "scopes"}, set(oauth))
         self.assertEqual(["gateway:mcp", "offline_access"], oauth["scopes"])

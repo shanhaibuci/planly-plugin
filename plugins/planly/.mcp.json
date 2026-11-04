@@ -2,7 +2,7 @@
   "mcpServers": {
     "planly": {
       "type": "http",
-      "url": "https://app.qingtingsk.com/mcp",
+      "url": "https://app.planly.cn/mcp",
       "scopes": [
         "gateway:mcp",
         "offline_access"
