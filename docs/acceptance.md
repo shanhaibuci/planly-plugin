@@ -1,11 +1,11 @@
 # Planly 独立 MCP 与 MCP Apps 验收
 
-当前源码版本：1.3.13（2026-11-04，用户已授权本地提交与新 annotated 标签 `v1.3.13`，不推送远端）。此前 `v1.3.12` 等版本的发布记录保留在下文。包内实现与真实宿主体验分开验收，未验证不算通过。
+当前源码版本：1.3.13（2026-11-04，源码与 annotated 标签 `v1.3.13` 已按用户后续授权推送 GitHub）。此前本地准备阶段及 `v1.3.12` 等版本的发布记录保留在下文。包内实现与真实宿主体验分开验收，未验证不算通过。
 
 ## 自动化范围
 
 - Manifest 不再引用 App，恰好声明 Planly HTTP MCP；Logo 与 Skill 完整。
-- 插件、内置 Skill 与 Gateway 源 Skill 的版本统一为 `1.3.13`，两份公开 Skill 的 16 个文件逐字节一致；展示名称与默认提示仍为「Planly 规划助理」。插件标识 `planly`、Skill 标识与调用名 `planly-solver`、市场身份 `personal`、市场展示名 `Planly Plugins` 和品牌资源保持不变；本次只授权新建本地 annotated 标签 `v1.3.13`，不移动既有标签。
+- 插件、内置 Skill 与 Gateway 源 Skill 的版本统一为 `1.3.13`，两份公开 Skill 的 16 个文件逐字节一致；展示名称与默认提示仍为「Planly 规划助理」。插件标识 `planly`、Skill 标识与调用名 `planly-solver`、市场身份 `personal`、市场展示名 `Planly Plugins` 和品牌资源保持不变；`v1.3.13` 已推送，标签继续指向原已验证提交。
 - 当前品牌采用 2026-10-13 确认的「01 冰蓝浅底」图标与 Quicksand Medium 500 字标；256 × 256 小图标和两种 1480 × 440 横排 Logo 从 Gateway 正式品牌资产逐字节同步，按基线校验源路径、SHA-256、尺寸及 RGBA 通道，随包交付完整 Quicksand 许可并移除未使用的 Outfit 许可。素材同步通过 `v1.3.11` 首次发布，本次同步不改变品牌素材，也不等于真实客户端品牌验收通过。
 - `.mcp.json` 与公开源一致且可重复生成；唯一 origin 更新为 `https://app.planly.cn`，生成 URL 为 `https://app.planly.cn/mcp`。仅更新端点基线，OAuth 源文件指纹不变，新 Issuer/resource 由 Gateway 元数据发现。
 - 服务器级 `mcpServers.planly.scopes` 必须与公开源一致，严格为 `gateway:mcp`、`offline_access`；字段缺失、顺序变化、误放在 `oauth.scopes` 或增加资料权限均不能通过生成检查。原生测试必须覆盖授权服务器发现列表大于显式权限列表的情况。
@@ -223,3 +223,7 @@ PLANLY_CODEX_BIN=/path/to/codex python3 -m unittest discover -s tests -p 'test_*
 ```
 
 这不代表真实目标桌面已安装新版本、完成新域 OAuth 登录和续期，或已经渲染 MCP Apps。旧域协议入口返回 410；更新客户端后需重新授权，不保留旧 Issuer/resource 的 Token。用户在验证后授权本地提交与新 annotated 标签 `v1.3.13`；本次不推送远端、移动既有标签、部署或修改用户安装与认证数据。
+
+### v1.3.13 远端推送（用户后续授权）
+
+用户随后明确要求推送 Plugin，已将源码提交和 annotated 标签 `v1.3.13` 推送 GitHub。标签固定于原已验证提交 `b43c9db7e4d7e6ce6aee6dae156748100a752b2d`；后续主线提交仅同步发布状态文档，不移动标签或改变包文件。此前 74 项测试结果保持原验证边界，客户端安装、重新授权、续期和图形渲染仍待独立验收。此次没有推送 Gateway 仓库或部署服务。

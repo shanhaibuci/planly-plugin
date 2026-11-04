@@ -8,11 +8,11 @@ Planly 规划助理：Skill + 插件自带 Gateway MCP + 宿主 OAuth；在支�
 | Skill 标识 | `planly-solver` |
 | 插件内 MCP 名 | `planly`（业务工具仍为 `gateway.*`） |
 | 展示名称 | Planly 规划助理 |
-| Plugin / Skill 版本 | **1.3.13**（用户已授权本地提交与 annotated 标签 `v1.3.13`，不推送远端） |
+| Plugin / Skill 版本 | **1.3.13**（源码与 annotated 标签 `v1.3.13` 已推送 GitHub） |
 | Gateway MCP | `https://app.planly.cn/mcp` |
 | OAuth Issuer | `https://auth.planly.cn/oidc`（由 Gateway 发现元数据提供） |
 
-**1.3.13 本地源码发行：** 插件、内置 Skill 与 Gateway 源 Skill 版本统一为 `1.3.13`，MCP 入口更新为 `https://app.planly.cn/mcp`。公开 Skill 的 16 个文件逐字节同步；公开 Client ID、回调、`gateway:mcp offline_access`、品牌与求解指导保持不变。用户已授权本地源码提交和新 annotated 标签 `v1.3.13`；本次不推送远端、不部署服务或更新用户安装。已发布的 `v1.3.12` 记录保留。
+**1.3.13 发布：** 插件、内置 Skill 与 Gateway 源 Skill 版本统一为 `1.3.13`，MCP 入口更新为 `https://app.planly.cn/mcp`。公开 Skill 的 16 个文件逐字节同步；公开 Client ID、回调、`gateway:mcp offline_access`、品牌与求解指导保持不变。源码与 annotated 标签 `v1.3.13` 已按用户后续授权推送 GitHub，标签固定于已验证的 `b43c9db7`；发布状态文档由后续主线提交更新。本次未部署服务或更新用户安装，已发布的 `v1.3.12` 记录保留。
 
 **品牌保持不变：** 沿用 `v1.3.11` 已同步的「01 冰蓝浅底」时空折叠与路径 Logo、Quicksand 字标许可和品牌测试基线。当前升版范围见 [1.3.13 版本说明](docs/releases/v1.3.13.md)。
 
@@ -22,7 +22,7 @@ Planly 规划助理：Skill + 插件自带 Gateway MCP + 宿主 OAuth；在支�
 
 ## 安装与使用
 
-本次授权仅覆盖本地提交和 annotated 标签，远端尚无 `v1.3.13` 标签。下面的安装命令仅在另行授权推送该标签后使用：
+GitHub 已提供 `v1.3.13` 标签，可使用该版本安装：
 
 ```bash
 codex plugin marketplace add shanhaibuci/planly-plugin --ref v1.3.13
@@ -75,7 +75,7 @@ Skill 从 Gateway 的任务展示提示分别获取 `map_display_tool_name`、`g
 
 上述双工具 / 双资源为已冻结的接入契约，不代表 Gateway、引擎或真实宿主已完成迁移。提示缺失或目录未就绪时降级为摘要和网页入口，不回退旧单工具契约，也不把只读调用成功当作 UI 已渲染。
 
-当前 `1.3.13` 的公开 Skill 与 Gateway 同步来源逐字节一致，更新版本声明与公开端点，不改变求解流程。来源提交、文件树指纹与验证边界见 [同步记录](docs/gateway-skill-sync.md)。用户已授权本地提交和 annotated 标签；不推送远端、更新用户安装或部署上游服务，Gateway 应用版本独立管理。
+当前 `1.3.13` 的公开 Skill 与 Gateway 同步来源逐字节一致，更新版本声明与公开端点，不改变求解流程。来源提交、文件树指纹与验证边界见 [同步记录](docs/gateway-skill-sync.md)。Plugin 源码和版本标签已推送；用户安装及上游服务部署独立处理，Gateway 应用版本独立管理。
 
 ## 本地验证
 
@@ -94,7 +94,7 @@ python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 - 根版本、Plugin 清单、内置 Skill 与 Gateway 源 Skill 统一为 `1.3.13`，16 个公开 Skill 文件逐字节一致。
 - 唯一公开端点配置改为 `https://app.planly.cn`，由生成器更新插件 MCP URL；公开 Client ID、回调和两项 scopes 保持原值。
-- 新 Issuer/resource 由服务发现提供；旧 Token 不视为兼容凭据，更新客户端后需重新授权。本次按用户授权在本地提交并创建 annotated 标签 `v1.3.13`，不推送远端或移动既有标签。详见 [版本说明](docs/releases/v1.3.13.md)。
+- 新 Issuer/resource 由服务发现提供；旧 Token 不视为兼容凭据，更新客户端后需重新授权。本版源码和 annotated 标签 `v1.3.13` 已按用户授权推送，标签指向保持不变。详见 [版本说明](docs/releases/v1.3.13.md)。
 
 ## 1.3.12 变更
 
